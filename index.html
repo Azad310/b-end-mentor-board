@@ -1,0 +1,4593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B端师兄认证管理看板</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #f0f2f5;
+      --bg-panel: #ffffff;
+      --bg-surface: #f8f9fb;
+      --bg-elevated: #eef0f4;
+      --text-primary: #1a1d23;
+      --text-secondary: #4a5063;
+      --text-tertiary: #7a8199;
+      --text-quaternary: #9ba3b5;
+      --accent-primary: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-violet: #8b5cf6;
+      --accent-light: rgba(99, 102, 241, 0.08);
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.1);
+      --border-subtle: rgba(0,0,0,0.04);
+      --border-standard: rgba(0,0,0,0.08);
+      --border-primary: #d8dce6;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.04);
+      --avatar-blue: linear-gradient(135deg, #6366f1, #8b5cf6);
+      --avatar-green: linear-gradient(135deg, #10b981, #34d399);
+      --avatar-orange: linear-gradient(135deg, #f59e0b, #fbbf24);
+      --avatar-gray: linear-gradient(135deg, #6b7280, #9ca3af);
+      --gradient-card: linear-gradient(135deg, rgba(99, 102, 241, 0.02), rgba(139, 92, 246, 0.02));
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-feature-settings: "cv01", "ss03";
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    .dashboard {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.03);
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-logo h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-logo h1 svg {
+      width: 24px;
+      height: 24px;
+      color: var(--accent-primary);
+    }
+
+    .nav-section {
+      margin-bottom: 24px;
+    }
+
+    .nav-section-title {
+      padding: 0 20px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-quaternary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-item {
+      margin: 2px 12px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      border-radius: var(--radius-md);
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: auto;
+    }
+
+    .nav-item:hover {
+      background: var(--accent-light);
+      color: var(--accent-primary);
+      transform: translateX(2px);
+    }
+
+    .nav-item:active {
+      transform: scale(0.98) translateX(2px);
+    }
+
+    .nav-item.active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .nav-item.active::before {
+      display: none;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.25);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .nav-item:not(.active) .nav-badge {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 240px;
+      padding: 32px 40px;
+      max-width: calc(100vw - 240px);
+      overflow-y: auto;
+      height: 100vh;
+      background: var(--bg-primary);
+    }
+
+    .main-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .main-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+      background: var(--border-standard);
+      border-radius: 4px;
+    }
+
+    .main-content::-webkit-scrollbar-thumb:hover {
+      background: var(--text-quaternary);
+    }
+
+    /* 模块显示控制 - 由 JavaScript 控制 display */
+    .module-section {
+      transition: opacity 0.15s ease;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-standard);
+    }
+
+    .header-title {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      color: var(--text-primary);
+      cursor: text;
+      padding: 6px 10px;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      display: inline-block;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-title:hover {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      background-color: var(--bg-surface);
+      border-color: var(--border-subtle);
+    }
+
+    .header-title:focus {
+      outline: none;
+      background-color: var(--bg-surface);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      margin-top: 6px;
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-ghost {
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-standard);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border-color: var(--border-primary);
+      transform: translateY(-1px);
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Module Section */
+    .module-section {
+      margin-bottom: 32px;
+    }
+
+    .module-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-standard);
+    }
+
+    .module-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .module-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .module-icon.blue {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      color: white;
+    }
+
+    .module-icon.green {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: white;
+    }
+
+    .module-icon.orange {
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+    }
+
+    .module-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+      cursor: text;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+
+    .module-title:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+    }
+
+    .module-title:focus {
+      outline: none;
+      background: var(--bg-surface);
+      border-color: var(--accent-primary);
+    }
+
+    .module-desc {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-left: auto;
+    }
+
+    /* Card Styles */
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      background-image: var(--gradient-card);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: var(--border-standard);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+      cursor: text;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      display: inline-block;
+      border: 1px solid transparent;
+    }
+
+    .card-title:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+    }
+
+    .card-title:focus {
+      outline: none;
+      background: var(--bg-surface);
+      border-color: var(--accent-primary);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .card-action-btn {
+      padding: 7px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-action-btn:hover {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border-color: var(--border-standard);
+      transform: translateY(-1px);
+    }
+
+    .card-action-btn.primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      color: white;
+      border-color: transparent;
+    }
+
+    .card-action-btn.primary:hover {
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .card-action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Data Import Area */
+    .import-area {
+      border: 2px dashed var(--border-standard);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--bg-surface);
+    }
+
+    .import-area:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+      transform: scale(1.01);
+    }
+
+    /* 多数据源导入 */
+    .import-section {
+      margin-bottom: 16px;
+    }
+
+    .import-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .import-area-small {
+      border: 2px dashed var(--border-standard);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-surface);
+    }
+
+    .import-area-small:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .import-area-small svg {
+      width: 24px;
+      height: 24px;
+      color: var(--text-quaternary);
+      flex-shrink: 0;
+    }
+
+    .import-area-small span {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .import-area-small.uploaded {
+      border-color: var(--success);
+      background: var(--success-light);
+    }
+
+    .import-area-small.uploaded span {
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .import-divider {
+      height: 1px;
+      background: var(--border-standard);
+      margin: 16px 0;
+    }
+
+    /* 数据导入侧边面板 */
+    .import-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .import-drawer.open {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .import-drawer-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .import-drawer-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 380px;
+      height: 100%;
+      background: var(--bg-panel);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .import-drawer.open .import-drawer-content {
+      transform: translateX(0);
+    }
+
+    .import-drawer-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .import-drawer-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .import-drawer-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .import-drawer-close:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .import-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+
+    .import-drawer-body .import-section {
+      margin-bottom: 8px;
+    }
+
+    .import-drawer-body .import-area-small {
+      margin-bottom: 12px;
+    }
+
+    .import-drawer-body .import-divider {
+      margin: 20px 0;
+    }
+
+    /* 弹窗样式 */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal.open {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 480px;
+      max-width: 90%;
+      background: var(--bg-panel);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 20px 24px;
+    }
+
+    .import-area svg {
+      width: 48px;
+      height: 48px;
+      color: var(--text-quaternary);
+      margin-bottom: 12px;
+    }
+
+    .import-area h4 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .import-area p {
+      font-size: 12px;
+      color: var(--text-quaternary);
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-card);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-violet));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .metric-card:hover::before {
+      opacity: 1;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    .metric-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .metric-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .metric-icon.blue {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+      color: white;
+    }
+
+    .metric-icon.green {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: white;
+    }
+
+    .metric-icon.orange {
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+    }
+
+    .metric-icon.red {
+      background: linear-gradient(135deg, var(--danger), #f87171);
+      color: white;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .metric-trend {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .metric-trend.up {
+      color: var(--success);
+    }
+
+    .metric-trend.down {
+      color: var(--danger);
+    }
+
+    .metric-trend svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Content Grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* 确保两个图表卡片高度一致 */
+    [data-component="dept-analysis"],
+    [data-component="direct-dept-analysis"] {
+      min-height: 340px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* 模块二的两个卡片高度对齐 */
+    [data-component="dept-distribution"],
+    [data-component="progress-reminder"] {
+      min-height: 480px;
+    }
+
+    /* FY27统计汇总卡片 */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      padding: 8px 0;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--bg-surface) 0%, white 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent-primary);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+
+    .stat-icon.blue {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    }
+
+    .stat-icon.green {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .stat-icon.orange {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .stat-icon.purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .dept-chart-container {
+      min-height: 260px;
+    }
+
+    /* 师兄名单表格卡片 */
+    [data-component="mentor-table"] {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 16px;
+    }
+
+    .content-grid.three-col {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      height: 240px;
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      padding: 20px 10px;
+      position: relative;
+      background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.02) 100%);
+      border-radius: var(--radius-md);
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .chart-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 80px;
+      padding: 0 2px;
+    }
+
+    .chart-bar {
+      width: clamp(16px, 100%, 48px);
+      max-width: 48px;
+      background: linear-gradient(180deg, var(--accent-primary), var(--accent-violet));
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      min-height: 4px;
+      position: relative;
+      box-shadow: 0 -2px 8px rgba(99, 102, 241, 0.2);
+    }
+
+    .chart-bar.warning {
+      background: linear-gradient(180deg, var(--warning), #fbbf24);
+      box-shadow: 0 -2px 8px rgba(245, 158, 11, 0.2);
+    }
+
+    .chart-bar.danger {
+      background: linear-gradient(180deg, var(--danger), #f87171);
+      box-shadow: 0 -2px 8px rgba(239, 68, 68, 0.2);
+    }
+
+    .chart-bar:hover {
+      opacity: 0.9;
+      transform: scaleY(1.05);
+      transform-origin: bottom;
+      box-shadow: 0 -4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .chart-bar:hover::after {
+      content: attr(data-value);
+      position: absolute;
+      top: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      z-index: 10;
+    }
+
+    .chart-bar:hover::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--text-primary);
+      pointer-events: none;
+    }
+
+    .chart-bar-label {
+      font-size: 10px;
+      color: var(--text-quaternary);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      max-width: 70px;
+    }
+
+    .chart-bar-label {
+      font-size: 10px;
+      color: var(--text-quaternary);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 60px;
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+      max-height: 420px;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 2px solid var(--border-standard);
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-panel) 100%);
+      z-index: 1;
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: var(--accent-light);
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--text-quaternary);
+    }
+
+    /* Status Badge */
+    .status-badge {
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    .status-badge.certified {
+      background: rgba(39, 166, 68, 0.12);
+      color: var(--success);
+    }
+
+    .status-badge.certified::before {
+      background: var(--success);
+    }
+
+    .status-badge.in-progress {
+      background: rgba(94, 106, 210, 0.12);
+      color: var(--accent-primary);
+    }
+
+    .status-badge.in-progress::before {
+      background: var(--accent-primary);
+    }
+
+    .status-badge.pending {
+      background: rgba(138, 143, 152, 0.12);
+      color: var(--text-tertiary);
+    }
+
+    .status-badge.pending::before {
+      background: var(--text-tertiary);
+    }
+
+    .status-badge.failed {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+    }
+
+    .status-badge.failed::before {
+      background: var(--danger);
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(90deg, var(--success), #34d399);
+    }
+
+    .progress-fill.medium {
+      background: linear-gradient(90deg, var(--warning), #fbbf24);
+    }
+
+    .progress-fill.low {
+      background: linear-gradient(90deg, var(--danger), #f87171);
+    }
+
+    /* Reminder List */
+    .reminder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .reminder-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reminder-item:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-standard);
+      transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .reminder-item.urgent {
+      border-left: 3px solid var(--danger);
+    }
+
+    .reminder-item.normal {
+      border-left: 3px solid var(--warning);
+    }
+
+    .reminder-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .reminder-info {
+      flex: 1;
+    }
+
+    .reminder-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .reminder-dept {
+      font-size: 11px;
+      color: var(--text-quaternary);
+    }
+
+    .reminder-status {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      white-space: nowrap;
+    }
+
+    .reminder-status.failed {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+    }
+
+    .reminder-status.pending {
+      background: rgba(138, 143, 152, 0.12);
+      color: var(--text-tertiary);
+    }
+
+    .reminder-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border-standard);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .reminder-checkbox:checked {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    /* Link Entry */
+    .link-entry {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-entry::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .link-entry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    .link-entry:hover::before {
+      opacity: 1;
+    }
+
+    .link-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .link-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+
+    .link-content {
+      flex: 1;
+    }
+
+    .link-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .link-desc {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .link-url {
+      font-size: 12px;
+      color: var(--accent-primary);
+      font-family: 'Berkeley Mono', monospace;
+      background: rgba(94, 106, 210, 0.08);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      margin-top: 6px;
+      display: inline-block;
+    }
+
+    .link-arrow {
+      color: var(--accent-primary);
+    }
+
+    .link-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* 二级部门柱状图 */
+    .dept-chart-container {
+      padding: 20px 0;
+      min-height: 250px;
+    }
+
+    .dept-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 220px;
+      padding: 0 10px;
+    }
+
+    .dept-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 60px;
+    }
+
+    .dept-bar {
+      width: 100%;
+      background: linear-gradient(180deg, var(--accent-primary), var(--accent-violet));
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      min-height: 8px;
+      position: relative;
+      box-shadow: 0 -2px 8px rgba(99, 102, 241, 0.2);
+    }
+
+    .dept-bar:hover {
+      opacity: 0.85;
+      transform: scaleY(1.02);
+      transform-origin: bottom;
+    }
+
+    .dept-bar-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px;
+      font-weight: 500;
+    }
+
+    .dept-bar-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .dept-chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-tertiary);
+      justify-content: center;
+    }
+
+    .dept-chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dept-chart-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .dept-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .dept-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .dept-stats span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dept-stats .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dept-stats .dot.green {
+      background: var(--success);
+    }
+
+    .dept-stats .dot.orange {
+      background: var(--warning);
+    }
+
+    .dept-stats .dot.red {
+      background: var(--danger);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-standard);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .content-grid.three-col {
+        grid-template-columns: 1fr 1fr;
+      }
+      .dept-analysis {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 64px;
+      }
+      .sidebar .nav-item span,
+      .sidebar .nav-section-title,
+      .sidebar-logo h1 span,
+      .nav-badge {
+        display: none;
+      }
+      .main-content {
+        margin-left: 64px;
+        max-width: calc(100vw - 64px);
+      }
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .content-grid.three-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Batch Actions Bar */
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      margin-bottom: 14px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .batch-actions .count {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .batch-actions .count strong {
+      color: var(--accent-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard" data-component="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" data-component="sidebar-navigation">
+      <div class="sidebar-logo">
+        <h1>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>B端师兄认证</span>
+        </h1>
+      </div>
+      
+      <nav>
+        <div class="nav-section">
+          <div class="nav-section-title">数据模块</div>
+          <div class="nav-item active" data-module="module-mentor-list">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>师兄名单</span>
+            <span class="nav-badge">128</span>
+          </div>
+          <div class="nav-item" data-module="module-certification-progress">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span>认证进度</span>
+          </div>
+          <div class="nav-item" data-module="module-certification-submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>认证提报</span>
+          </div>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">工具</div>
+          <div class="nav-item" id="nav-import-data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>数据导入</span>
+          </div>
+          <div class="nav-item" id="nav-clear-data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>清空数据</span>
+          </div>
+          <div class="nav-item" id="nav-export-data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>导出数据</span>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- 数据导入侧边面板 -->
+    <div class="import-drawer" id="import-drawer">
+      <div class="import-drawer-overlay" id="import-drawer-overlay"></div>
+      <div class="import-drawer-content">
+        <div class="import-drawer-header">
+          <h3>数据源导入</h3>
+          <button class="import-drawer-close" id="import-drawer-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="import-drawer-body">
+          <!-- 师兄名单导入（独立） -->
+          <div class="import-section">
+            <div class="import-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+              师兄名单（模块一）
+            </div>
+            <input type="file" id="file-mentor" accept=".xlsx,.xls" style="display: none;">
+            <div class="import-area-small" id="import-area-mentor" onclick="document.getElementById('file-mentor').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span id="mentor-status">点击上传师兄名单</span>
+            </div>
+          </div>
+
+          <div class="import-divider"></div>
+
+          <!-- 认证数据导入（合并） -->
+          <div class="import-section">
+            <div class="import-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              认证数据（合并后更新模块二）
+            </div>
+            
+            <input type="file" id="file-white-collar" accept=".xlsx,.xls" style="display: none;">
+            <div class="import-area-small" id="import-area-white-collar" onclick="document.getElementById('file-white-collar').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span id="white-collar-status">白领&CCA认证进度</span>
+            </div>
+
+            <input type="file" id="file-group-buy" accept=".xlsx,.xls" style="display: none;">
+            <div class="import-area-small" id="import-area-group-buy" onclick="document.getElementById('file-group-buy').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span id="group-buy-status">爆品团认证进度</span>
+            </div>
+
+            <input type="file" id="file-submit" accept=".xlsx,.xls" style="display: none;">
+            <div class="import-area-small" id="import-area-submit" onclick="document.getElementById('file-submit').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span id="submit-status">师兄认证提报表</span>
+            </div>
+
+            <button class="card-action-btn primary" id="btn-merge-cert" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+              合并认证数据并更新模块二
+            </button>
+
+            <div id="global-status" style="margin-top: 12px; font-size: 13px; display: none;">
+              <span id="global-status-text"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" data-component="main-content">
+      <!-- Header -->
+      <div class="header" data-component="page-header">
+        <div>
+          <h1 class="header-title" contenteditable="true" spellcheck="false">B端师兄认证管理看板</h1>
+          <p class="header-subtitle">数据驱动 · 进度透明 · 一键提醒</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="btn-share-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            分享看板
+          </button>
+          <button class="btn btn-ghost" id="btn-download-permission">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            下载权限
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 1: 师兄名单 -->
+      <section id="module-mentor-list" class="module-section" data-component="module-mentor-list">
+        <div class="module-header">
+          <div class="module-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h2 class="module-title" contenteditable="true" spellcheck="false">模块一：师兄名单管理</h2>
+          <span class="module-desc">导入Excel更新名单，自动按二级部门分布分析</span>
+        </div>
+
+        <div class="content-grid">
+          <!-- FY27统计汇总卡片 -->
+          <div class="card" data-component="fy27-summary" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <h3 class="card-title" contenteditable="true" spellcheck="false">FY27 B端师兄人数统计</h3>
+              <div class="card-actions">
+                <button class="card-action-btn" id="btn-refresh-fy27">刷新</button>
+              </div>
+            </div>
+            <div class="summary-stats" id="fy27-stats">
+              <div class="stat-item">
+                <div class="stat-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">师兄总人数</div>
+                  <div class="stat-value" id="fy27-total">0</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">直营业务中心</div>
+                  <div class="stat-value" id="fy27-direct">0</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon orange">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">带教徒弟总数</div>
+                  <div class="stat-value" id="fy27-apprentices">0</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon purple">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">覆盖部门数</div>
+                  <div class="stat-value" id="fy27-depts">0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Department Analysis -->
+          <div class="card" data-component="dept-analysis">
+            <div class="card-header">
+              <h3 class="card-title" contenteditable="true" spellcheck="false">二级部门分布</h3>
+              <div class="card-actions">
+                <button class="card-action-btn">刷新</button>
+                <button class="card-action-btn">导出</button>
+              </div>
+            </div>
+            <div class="dept-chart-container">
+              <div class="dept-chart" id="dept-chart">
+                <!-- 柱状图由JavaScript动态生成 -->
+              </div>
+            </div>
+            <div class="dept-chart-legend" id="dept-chart-legend">
+              <!-- 图例由JavaScript动态生成 -->
+            </div>
+          </div>
+
+          <!-- 直营业务中心分布 -->
+          <div class="card" data-component="direct-dept-analysis">
+            <div class="card-header">
+              <h3 class="card-title" contenteditable="true" spellcheck="false">直营业务中心分布</h3>
+              <div class="card-actions">
+                <button class="card-action-btn">刷新</button>
+                <button class="card-action-btn">导出</button>
+              </div>
+            </div>
+            <div class="dept-chart-container">
+              <div class="dept-chart" id="direct-dept-chart">
+                <!-- 直营业务中心柱状图由JavaScript动态生成 -->
+              </div>
+            </div>
+            <div class="dept-chart-legend" id="direct-dept-chart-legend">
+              <!-- 图例由JavaScript动态生成 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Mentor List Table -->
+        <div class="card" data-component="mentor-table">
+          <div class="card-header">
+            <h3 class="card-title" contenteditable="true" spellcheck="false">完整师兄名单</h3>
+            <div class="card-actions">
+              <input type="text" id="mentor-search-input" placeholder="搜索姓名/工号..." style="padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; width: 180px; display: none;">
+              <select id="mentor-filter-dept" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; display: none;">
+                <option value="">所有部门</option>
+              </select>
+              <select id="mentor-filter-sub-dept" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; display: none;">
+                <option value="">所有战区</option>
+              </select>
+              <button class="card-action-btn" id="btn-search-mentor">搜索</button>
+              <button class="card-action-btn" id="btn-filter-mentor">筛选</button>
+              <button class="card-action-btn" id="btn-export-mentor">导出Excel</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>工号</th>
+                  <th>二级部门</th>
+                  <th>三级部门</th>
+                  <th>四级部门</th>
+                  <th>带教徒弟总数</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar" style="background: var(--avatar-blue);">张</div>
+                      <div class="user-info">
+                        <span class="user-name">张明远</span>
+                        <span class="user-role">技术导师</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>EMP001</td>
+                  <td>前端开发部</td>
+                  <td>用户体验组</td>
+                  <td>交互设计小组</td>
+                  <td>5</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar" style="background: var(--avatar-green);">李</div>
+                      <div class="user-info">
+                        <span class="user-name">李思琪</span>
+                        <span class="user-role">产品导师</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>EMP002</td>
+                  <td>产品设计部</td>
+                  <td>B端产品组</td>
+                  <td>商家产品小组</td>
+                  <td>3</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar" style="background: var(--avatar-orange);">王</div>
+                      <div class="user-info">
+                        <span class="user-name">王浩然</span>
+                        <span class="user-role">技术导师</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>EMP003</td>
+                  <td>后端开发部</td>
+                  <td>架构组</td>
+                  <td>中间件小组</td>
+                  <td>4</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar" style="background: var(--avatar-gray);">陈</div>
+                      <div class="user-info">
+                        <span class="user-name">陈雨桐</span>
+                        <span class="user-role">设计导师</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>EMP004</td>
+                  <td>视觉设计部</td>
+                  <td>品牌设计组</td>
+                  <td>视觉创意小组</td>
+                  <td>2</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar" style="background: var(--avatar-gray);">刘</div>
+                      <div class="user-info">
+                        <span class="user-name">刘子轩</span>
+                        <span class="user-role">技术导师</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>EMP005</td>
+                  <td>市场推广部</td>
+                  <td>渠道运营组</td>
+                  <td>线上运营小组</td>
+                  <td>1</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Module 2: 认证进度看板 -->
+      <section id="module-certification-progress" class="module-section" data-component="module-certification-progress">
+        <div class="module-header">
+          <div class="module-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <h2 class="module-title" contenteditable="true" spellcheck="false">模块二：认证进度看板</h2>
+          <span class="module-desc">认证数据总览 · 三级部门分布 · 一键提醒</span>
+          <button class="btn primary" id="btn-weekly-report" style="margin-left: auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 6px;">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            生成周报并推送
+          </button>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metrics-grid" data-component="progress-metrics">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">认证总人数</span>
+              <div class="metric-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value">128</div>
+            <div class="metric-trend">
+              <span>本期认证计划</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">已认证</span>
+              <div class="metric-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value">86</div>
+            <div class="metric-trend up">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              </svg>
+              通过率 67.2%
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">未参与（待启动）</span>
+              <div class="metric-icon orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value">31</div>
+            <div class="metric-trend down">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+              </svg>
+              需提醒跟进
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">未通过</span>
+              <div class="metric-icon red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="metric-value">11</div>
+            <div class="metric-trend down">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+              </svg>
+              需补考提醒
+            </div>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <!-- 三级部门分布图表 -->
+          <div class="card" data-component="dept-distribution">
+            <div class="card-header">
+              <h3 class="card-title" contenteditable="true" spellcheck="false">三级部门未参与+未通过分布</h3>
+              <div class="card-actions">
+                <button class="card-action-btn">下载数据</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height: 80%;"></div>
+                <div class="chart-bar-label">用户体验组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar warning" style="height: 65%;"></div>
+                <div class="chart-bar-label">B端产品组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar danger" style="height: 90%;"></div>
+                <div class="chart-bar-label">架构组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height: 45%;"></div>
+                <div class="chart-bar-label">品牌设计组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar warning" style="height: 70%;"></div>
+                <div class="chart-bar-label">渠道运营组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar danger" style="height: 55%;"></div>
+                <div class="chart-bar-label">数据分析组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar" style="height: 35%;"></div>
+                <div class="chart-bar-label">项目管理组</div>
+              </div>
+              <div class="chart-bar-group">
+                <div class="chart-bar warning" style="height: 60%;"></div>
+                <div class="chart-bar-label">测试工程组</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--text-quaternary);">
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: var(--accent-primary); border-radius: 2px; display: inline-block;"></span> 未参与 1-3人</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: var(--warning); border-radius: 2px; display: inline-block;"></span> 未参与 4-6人</span>
+              <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: var(--danger); border-radius: 2px; display: inline-block;"></span> 未参与 7人+</span>
+            </div>
+          </div>
+
+          <!-- 认证进度提醒 -->
+          <div class="card" data-component="progress-reminder">
+            <div class="card-header">
+              <h3 class="card-title" contenteditable="true" spellcheck="false">认证进度提醒</h3>
+              <div class="card-actions">
+                <button class="card-action-btn primary" onclick="sendReminder()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                  一键提醒
+                </button>
+              </div>
+            </div>
+            <div class="batch-actions">
+              <span class="count">已选择 <strong>0</strong> 人</span>
+              <button class="card-action-btn" style="font-size: 11px; padding: 4px 8px;">全选</button>
+              <button class="card-action-btn" style="font-size: 11px; padding: 4px 8px;">仅未通过</button>
+              <button class="card-action-btn" style="font-size: 11px; padding: 4px 8px;">仅未参与</button>
+            </div>
+            <div class="reminder-list">
+              <div class="reminder-item urgent">
+                <input type="checkbox" class="reminder-checkbox">
+                <div class="reminder-avatar" style="background: var(--avatar-gray);">陈</div>
+                <div class="reminder-info">
+                  <div class="reminder-name">陈雨桐</div>
+                  <div class="reminder-dept">视觉设计部 · 品牌设计组</div>
+                </div>
+                <span class="reminder-status failed">未通过</span>
+              </div>
+              <div class="reminder-item urgent">
+                <input type="checkbox" class="reminder-checkbox">
+                <div class="reminder-avatar" style="background: var(--avatar-orange);">赵</div>
+                <div class="reminder-info">
+                  <div class="reminder-name">赵晓峰</div>
+                  <div class="reminder-dept">后端开发部 · 架构组</div>
+                </div>
+                <span class="reminder-status failed">未通过</span>
+              </div>
+              <div class="reminder-item normal">
+                <input type="checkbox" class="reminder-checkbox">
+                <div class="reminder-avatar" style="background: var(--avatar-gray);">刘</div>
+                <div class="reminder-info">
+                  <div class="reminder-name">刘子轩</div>
+                  <div class="reminder-dept">市场推广部 · 渠道运营组</div>
+                </div>
+                <span class="reminder-status pending">未参与</span>
+              </div>
+              <div class="reminder-item normal">
+                <input type="checkbox" class="reminder-checkbox">
+                <div class="reminder-avatar" style="background: var(--avatar-gray);">孙</div>
+                <div class="reminder-info">
+                  <div class="reminder-name">孙艺萌</div>
+                  <div class="reminder-dept">运营市场中心 · 数据分析组</div>
+                </div>
+                <span class="reminder-status pending">未参与</span>
+              </div>
+              <div class="reminder-item normal">
+                <input type="checkbox" class="reminder-checkbox">
+                <div class="reminder-avatar" style="background: var(--avatar-gray);">周</div>
+                <div class="reminder-info">
+                  <div class="reminder-name">周建国</div>
+                  <div class="reminder-dept">技术研发中心 · 测试工程组</div>
+                </div>
+                <span class="reminder-status pending">未参与</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Module 3: 认证提报 -->
+      <section id="module-certification-submit" class="module-section" data-component="module-certification-submit">
+        <div class="module-header">
+          <div class="module-icon orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </div>
+          <h2 class="module-title" contenteditable="true" spellcheck="false">模块三：认证提报入口</h2>
+          <span class="module-desc">点击链接跳转钉钉表格填写认证信息</span>
+        </div>
+
+        <!-- 钉钉表格跳转卡片 -->
+        <div class="card" data-component="dingtalk-link" style="max-width: 600px; margin: 0 auto;">
+          <div class="card-header">
+            <h3 class="card-title" contenteditable="true" spellcheck="false">师兄认证提报表</h3>
+          </div>
+          <div style="padding: 32px 24px; text-align: center;">
+            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #3370FF, #0052D9); border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width: 40px; height: 40px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.6;">
+              请点击下方按钮跳转至钉钉在线表格<br>填写师兄认证提报信息
+            </p>
+            <p style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 28px;">
+              支持多人同时编辑 · 数据实时同步
+            </p>
+            <a href="https://alidocs.dingtalk.com/i/nodes/6LeBq413JAzxpOwBcnNqlRZg8DOnGvpb?utm_scene=team_space&iframeQuery=sheet_range%3Dst-6989f2a5-59921_0_0_1_1" target="_blank" class="btn primary" style="padding: 12px 32px; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              打开钉钉提报表
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 分享链接弹窗 -->
+  <div class="modal" id="share-modal">
+    <div class="modal-overlay" id="share-modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>分享看板链接</h3>
+        <button class="modal-close" id="share-modal-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">其他人可通过以下链接查看看板内容（只读模式，无法下载数据）</p>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <input type="text" id="share-link-input" readonly value="" style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; background: var(--bg-elevated); color: var(--text-primary); box-sizing: border-box;">
+          <button class="btn primary" id="btn-copy-share-link" style="white-space: nowrap;">复制链接</button>
+        </div>
+        <div style="padding: 12px; background: var(--warning-light); border-radius: var(--radius-md); font-size: 13px; color: var(--warning);">
+          <strong>提示：</strong>分享链接仅允许查看看板内容，数据下载需要您授权
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下载权限设置弹窗 -->
+  <div class="modal" id="download-permission-modal">
+    <div class="modal-overlay" id="download-permission-modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>数据下载权限设置</h3>
+        <button class="modal-close" id="download-permission-modal-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- 下载权限开关 -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; margin-bottom: 12px;">
+            <input type="checkbox" id="perm-download-mentor" checked style="width: 18px; height: 18px;">
+            <div>
+              <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">师兄名单下载</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">允许下载师兄名单Excel</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; margin-bottom: 12px;">
+            <input type="checkbox" id="perm-download-cert" checked style="width: 18px; height: 18px;">
+            <div>
+              <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">认证进度下载</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">允许下载认证进度数据</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer;">
+            <input type="checkbox" id="perm-download-submit" checked style="width: 18px; height: 18px;">
+            <div>
+              <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">提报数据下载</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">允许下载认证提报数据</div>
+            </div>
+          </label>
+        </div>
+
+        <!-- 人员管理区域 -->
+        <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary);">有下载权限的人员</h4>
+            <button id="btn-add-user" style="padding: 6px 12px; background: var(--accent-light); border: 1px solid var(--accent-primary); border-radius: var(--radius-sm); color: var(--accent-primary); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              添加人员
+            </button>
+          </div>
+          <!-- 添加人员输入框（默认隐藏） -->
+          <div id="add-user-input-area" style="display: none; margin-bottom: 12px; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="new-user-name" placeholder="输入姓名" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: white;">
+              <input type="text" id="new-user-empId" placeholder="工号" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: white;">
+              <button id="btn-confirm-add" style="padding: 8px 12px; background: var(--accent-primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;">确定</button>
+              <button id="btn-cancel-add" style="padding: 8px 12px; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary);">取消</button>
+            </div>
+          </div>
+          <!-- 人员列表 -->
+          <div id="user-list" style="max-height: 150px; overflow-y: auto;">
+            <div style="text-align: center; padding: 16px; color: var(--text-tertiary); font-size: 13px;">暂无授权人员，点击"添加人员"开始</div>
+          </div>
+        </div>
+
+        <button class="btn primary" id="btn-save-permission" style="width: 100%;">保存权限设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局状态提示函数
+    function showGlobalStatus(msg, type) {
+      var globalStatus = document.getElementById('global-status');
+      var globalStatusText = document.getElementById('global-status-text');
+      if (globalStatus && globalStatusText) {
+        globalStatus.style.display = 'block';
+        globalStatusText.textContent = msg;
+        if (type === 'success') globalStatusText.style.color = 'var(--success)';
+        else if (type === 'error') globalStatusText.style.color = 'var(--danger)';
+        else globalStatusText.style.color = 'var(--accent-primary)';
+      }
+    }
+
+    // 切换模块显示 - 直接使用 style.display
+    function switchModule(moduleId) {
+      var sections = document.querySelectorAll('.module-section');
+      for (var i = 0; i < sections.length; i++) {
+        sections[i].style.display = 'none';
+      }
+      var target = document.getElementById(moduleId);
+      if (target) {
+        target.style.display = 'block';
+      }
+      // 保存当前模块到localStorage
+      localStorage.setItem('currentModule', moduleId);
+    }
+
+    // FY27刷新按钮
+    var btnRefreshFY27 = document.getElementById('btn-refresh-fy27');
+    if (btnRefreshFY27) {
+      btnRefreshFY27.addEventListener('click', function() {
+        updateFY27Stats(mentorData);
+      });
+    }
+
+    // 初始化：恢复上次选中的模块
+    (function init() {
+      var sections = document.querySelectorAll('.module-section');
+      for (var i = 0; i < sections.length; i++) {
+        sections[i].style.display = 'none';
+      }
+      // 从localStorage恢复当前模块，如果没有则默认显示第一个模块
+      var savedModule = localStorage.getItem('currentModule');
+      var target = document.getElementById(savedModule) || document.getElementById('module-mentor-list');
+      if (target) target.style.display = 'block';
+
+      // 更新侧边栏active状态
+      var navItems = document.querySelectorAll('.nav-item[data-module]');
+      for (var j = 0; j < navItems.length; j++) {
+        navItems[j].classList.remove('active');
+        if (navItems[j].getAttribute('data-module') === savedModule) {
+          navItems[j].classList.add('active');
+        }
+      }
+
+      // 自动加载AI表格导出的数据
+      loadAITableData();
+
+      // 每5分钟自动刷新数据
+      setInterval(function() {
+        console.log('自动刷新AI表格数据...');
+        loadAITableData();
+      }, 5 * 60 * 1000);
+
+      // 数据导入面板交互
+      var importDrawer = document.getElementById('import-drawer');
+      var importOverlay = document.getElementById('import-drawer-overlay');
+      var importClose = document.getElementById('import-drawer-close');
+      var navImport = document.getElementById('nav-import-data');
+      var navClear = document.getElementById('nav-clear-data');
+
+      // 打开导入面板
+      if (navImport) {
+        navImport.addEventListener('click', function() {
+          if (importDrawer) importDrawer.classList.add('open');
+        });
+      }
+
+      // 关闭导入面板（点击遮罩或关闭按钮）
+      if (importOverlay) {
+        importOverlay.addEventListener('click', function() {
+          importDrawer.classList.remove('open');
+        });
+      }
+      if (importClose) {
+        importClose.addEventListener('click', function() {
+          importDrawer.classList.remove('open');
+        });
+      }
+
+      // 清空数据按钮 - 在第二个IIFE中处理
+
+      // 分享链接弹窗
+      var shareModal = document.getElementById('share-modal');
+      var shareOverlay = document.getElementById('share-modal-overlay');
+      var shareClose = document.getElementById('share-modal-close');
+      var btnShareLink = document.getElementById('btn-share-link');
+      var shareLinkInput = document.getElementById('share-link-input');
+      var btnCopyShareLink = document.getElementById('btn-copy-share-link');
+
+      if (btnShareLink) {
+        btnShareLink.addEventListener('click', function() {
+          // 生成当前页面链接
+          var shareUrl = window.location.href;
+          if (shareLinkInput) shareLinkInput.value = shareUrl;
+          if (shareModal) shareModal.classList.add('open');
+        });
+      }
+
+      if (shareOverlay) {
+        shareOverlay.addEventListener('click', function() {
+          shareModal.classList.remove('open');
+        });
+      }
+      if (shareClose) {
+        shareClose.addEventListener('click', function() {
+          shareModal.classList.remove('open');
+        });
+      }
+      if (btnCopyShareLink) {
+        btnCopyShareLink.addEventListener('click', function() {
+          if (shareLinkInput) {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            btnCopyShareLink.textContent = '已复制!';
+            setTimeout(function() {
+              btnCopyShareLink.textContent = '复制链接';
+            }, 2000);
+          }
+        });
+      }
+
+      // 下载权限设置弹窗
+      var permModal = document.getElementById('download-permission-modal');
+      var permOverlay = document.getElementById('download-permission-modal-overlay');
+      var permClose = document.getElementById('download-permission-modal-close');
+      var btnDownloadPermission = document.getElementById('btn-download-permission');
+      var btnSavePermission = document.getElementById('btn-save-permission');
+
+      if (btnDownloadPermission) {
+        btnDownloadPermission.addEventListener('click', function() {
+          // 加载当前权限设置
+          var perms = JSON.parse(localStorage.getItem('downloadPermissions') || '{"mentor":true,"cert":true,"submit":true}');
+          document.getElementById('perm-download-mentor').checked = perms.mentor;
+          document.getElementById('perm-download-cert').checked = perms.cert;
+          document.getElementById('perm-download-submit').checked = perms.submit;
+          if (permModal) permModal.classList.add('open');
+        });
+      }
+
+      if (permOverlay) {
+        permOverlay.addEventListener('click', function() {
+          permModal.classList.remove('open');
+        });
+      }
+      if (permClose) {
+        permClose.addEventListener('click', function() {
+          permModal.classList.remove('open');
+        });
+      }
+      if (btnSavePermission) {
+        btnSavePermission.addEventListener('click', function() {
+          var perms = {
+            mentor: document.getElementById('perm-download-mentor').checked,
+            cert: document.getElementById('perm-download-cert').checked,
+            submit: document.getElementById('perm-download-submit').checked
+          };
+          localStorage.setItem('downloadPermissions', JSON.stringify(perms));
+          
+          // 同时保存人员列表
+          var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+          localStorage.setItem('downloadUsers', JSON.stringify(users));
+          
+          permModal.classList.remove('open');
+          alert('权限设置已保存');
+        });
+      }
+
+      // 人员管理功能
+      var btnAddUser = document.getElementById('btn-add-user');
+      var addUserInputArea = document.getElementById('add-user-input-area');
+      var btnConfirmAdd = document.getElementById('btn-confirm-add');
+      var btnCancelAdd = document.getElementById('btn-cancel-add');
+      var newUserInput = document.getElementById('new-user-name');
+      var newEmpIdInput = document.getElementById('new-user-empId');
+      var userList = document.getElementById('user-list');
+
+      // 显示/隐藏添加输入框
+      if (btnAddUser) {
+        btnAddUser.addEventListener('click', function() {
+          var isHidden = addUserInputArea.style.display === 'none';
+          addUserInputArea.style.display = isHidden ? 'block' : 'none';
+        });
+      }
+
+      // 取消添加
+      if (btnCancelAdd) {
+        btnCancelAdd.addEventListener('click', function() {
+          addUserInputArea.style.display = 'none';
+          newUserInput.value = '';
+          newEmpIdInput.value = '';
+        });
+      }
+
+      // 确认添加人员
+      if (btnConfirmAdd) {
+        btnConfirmAdd.addEventListener('click', function() {
+          var name = newUserInput.value.trim();
+          var empId = newEmpIdInput.value.trim();
+          if (!name) {
+            alert('请输入姓名');
+            return;
+          }
+          if (!empId) {
+            alert('请输入工号');
+            return;
+          }
+          
+          // 获取现有人员列表
+          var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+          
+          // 检查是否已存在
+          if (users.some(u => u.empId === empId)) {
+            alert('该工号已存在');
+            return;
+          }
+          
+          // 添加新用户
+          users.push({ name: name, empId: empId, addedAt: new Date().toISOString() });
+          localStorage.setItem('downloadUsers', JSON.stringify(users));
+          
+          // 清空输入并隐藏
+          newUserInput.value = '';
+          newEmpIdInput.value = '';
+          addUserInputArea.style.display = 'none';
+          
+          // 刷新列表
+          renderUserList();
+        });
+      }
+
+      // 渲染人员列表
+      function renderUserList() {
+        var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+        if (users.length === 0) {
+          userList.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--text-tertiary); font-size: 13px;">暂无授权人员，点击"添加人员"开始</div>';
+          return;
+        }
+        
+        var html = '';
+        users.forEach(function(user, index) {
+          html += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px;">';
+          html += '<div style="display: flex; align-items: center; gap: 10px;">';
+          html += '<div style="width: 32px; height: 32px; background: var(--accent-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--accent-primary);">' + user.name.charAt(0) + '</div>';
+          html += '<div><div style="font-size: 14px; font-weight: 500; color: var(--text-primary);">' + user.name + '</div>';
+          html += '<div style="font-size: 12px; color: var(--text-tertiary);">工号: ' + user.empId + '</div></div></div>';
+          html += '<button onclick="removeUser(' + index + ')" style="padding: 4px 8px; background: none; border: 1px solid var(--danger); border-radius: var(--radius-xs); color: var(--danger); cursor: pointer; font-size: 12px;">移除</button>';
+          html += '</div>';
+        });
+        userList.innerHTML = html;
+      }
+
+      // 移除人员（全局函数）
+      window.removeUser = function(index) {
+        if (confirm('确认移除该人员的下载权限？')) {
+          var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+          users.splice(index, 1);
+          localStorage.setItem('downloadUsers', JSON.stringify(users));
+          renderUserList();
+        }
+      };
+
+      // 打开弹窗时刷新列表
+      if (btnDownloadPermission) {
+        var originalClick = btnDownloadPermission.onclick;
+        btnDownloadPermission.addEventListener('click', function() {
+          setTimeout(renderUserList, 100);
+        });
+      }
+    })();
+
+    // 从AI表格导出的JSON文件加载数据
+    function loadAITableData() {
+      var statusEl = document.getElementById('global-status-text');
+      if (statusEl) statusEl.textContent = '正在从AI表格加载数据...';
+
+      // 加载认证进度数据
+      loadJSONFile('data-cert.json', function(certData) {
+        if (certData && certData.length > 0) {
+          var parsed = parseAITableCertData(certData);
+          updateCertDashboard(parsed);
+          if (statusEl) {
+            statusEl.textContent = '已加载 ' + parsed.length + ' 条认证数据（来自AI表格）';
+            statusEl.style.color = 'var(--success)';
+          }
+          console.log('成功从AI表格加载认证数据：' + parsed.length + ' 条');
+        }
+      });
+
+      // 加载师兄名单数据
+      loadJSONFile('data-mentors.json', function(mentorData) {
+        if (mentorData && mentorData.length > 0) {
+          var parsed = parseAITableMentorData(mentorData);
+          updateMentorList(parsed);
+          console.log('成功从AI表格加载师兄名单：' + parsed.length + ' 条');
+        }
+      });
+    }
+
+    // 通用JSON文件加载
+    function loadJSONFile(filename, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', filename, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json.data && json.data.records) {
+              callback(json.data.records);
+            }
+          } catch (err) {
+            console.error('解析' + filename + '失败:', err);
+          }
+        }
+      };
+      xhr.onerror = function() {
+        console.log('无法加载' + filename + '，请运行"同步AI表格数据.cmd"');
+      };
+      xhr.send();
+    }
+
+    // 解析AI表格认证数据
+    function parseAITableCertData(records) {
+      return records.map(function(rec) {
+        var cells = rec.cells || {};
+        return {
+          empId: String(cells['01ZM8y7'] || '').trim(),
+          name: cells['mHe1U1b'] || '',
+          dept1: cells['mKUEya0'] || '未分配',
+          dept2: cells['S25BNzT'] || '未分配',
+          dept3: cells['kITR8ok'] || '未分配',
+          certStatus: normalizeCertStatus(cells['Fo3Uv8Y']),
+          certType: cells['s3DW5r4'] || '',
+          endDate: cells['TZnFlOd'] || '',
+          apprentice: 0
+        };
+      }).filter(function(d) { return d.name; });
+    }
+
+    // 解析AI表格师兄名单数据
+    function parseAITableMentorData(records) {
+      return records.map(function(rec) {
+        var cells = rec.cells || {};
+        return {
+          empId: String(cells['jvqcygfazc68ay2bv2o4x'] || cells['a3011pthx9nxvmawcfkvr'] || '').trim(),
+          name: cells['6m4bq9st2iakkdk2j5kud'] || cells['jnraxk12jdhuh4q7f7qhc'] || '',
+          dept2: cells['fudx9y1hs3ny79x34p4cq'] || '未分配',
+          dept3: cells['iwvp3lah30cdw88b58odf'] || '未分配',
+          dept4: cells['w00xqxe6d34kdirfgau0m'] || '-',
+          apprentice: 0
+        };
+      }).filter(function(d) { return d.name; });
+    }
+
+    // 更新师兄名单（模块1）
+    function updateMentorList(data) {
+      console.log('更新师兄名单：' + data.length + ' 条');
+
+      // 更新指标
+      var metricCard = document.querySelector('.metric-value');
+      if (metricCard && metricCard.closest('.metric-card')) {
+        var badge = document.querySelector('.nav-badge');
+        if (badge) badge.textContent = data.length;
+      }
+
+      // 更新部门分布
+      updateDeptAnalysis(data);
+      updateDirectDeptAnalysis(data);
+
+      // 更新师兄名单表格
+      var tableBody = document.querySelector('.mentor-table tbody');
+      if (!tableBody) return;
+
+      var html = '';
+      data.slice(0, 50).forEach(function(d) {
+        html += '<tr>';
+        html += '<td><div class="mentor-name-cell"><div class="mentor-avatar">' + d.name.charAt(0) + '</div><div><div class="mentor-name">' + d.name + '</div></div></div></td>';
+        html += '<td>' + d.empId + '</td>';
+        html += '<td>' + d.dept2 + '</td>';
+        html += '<td>' + d.dept3 + '</td>';
+        html += '<td>' + d.dept4 + '</td>';
+        html += '<td>' + d.apprentice + '</td>';
+        html += '</tr>';
+      });
+      tableBody.innerHTML = html;
+    }
+
+    function parseAITableData(rows) {
+      var headers = rows[0];
+      var colMap = {};
+
+      for (var i = 0; i < headers.length; i++) {
+        var h = String(headers[i]).trim();
+        if (h.includes('工号')) colMap.empId = i;
+        else if (h.includes('姓名')) colMap.name = i;
+        else if (h.includes('一级部门')) colMap.dept1 = i;
+        else if (h.includes('二级部门')) colMap.dept2 = i;
+        else if (h.includes('三级部门')) colMap.dept3 = i;
+        else if (h.includes('认证状态')) colMap.certStatus = i;
+        else if (h.includes('认证类型')) colMap.certType = i;
+        else if (h.includes('截止日期')) colMap.endDate = i;
+      }
+
+      if (colMap.empId === undefined) colMap.empId = 0;
+      if (colMap.name === undefined) colMap.name = 1;
+      if (colMap.dept1 === undefined) colMap.dept1 = 3;
+      if (colMap.dept2 === undefined) colMap.dept2 = 4;
+      if (colMap.dept3 === undefined) colMap.dept3 = 5;
+      if (colMap.certType === undefined) colMap.certType = 6;
+      if (colMap.certStatus === undefined) colMap.certStatus = 7;
+      if (colMap.endDate === undefined) colMap.endDate = 9;
+
+      var result = [];
+      for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        if (!row[colMap.name]) continue;
+
+        result.push({
+          name: row[colMap.name] || '',
+          empId: String(row[colMap.empId] || '').trim(),
+          dept1: row[colMap.dept1] || '未分配',
+          dept2: row[colMap.dept2] || '未分配',
+          dept3: row[colMap.dept3] || '未分配',
+          certStatus: normalizeCertStatus(row[colMap.certStatus]),
+          certType: row[colMap.certType] || '',
+          endDate: row[colMap.endDate] || '',
+          apprentice: 0
+        });
+      }
+
+      return result;
+    }
+
+    // 更新认证进度看板（模块2）
+    function updateCertDashboard(data) {
+      var total = data.length;
+      var certified = 0, pending = 0, failed = 0;
+
+      data.forEach(function(d) {
+        if (d.certStatus === '已认证' || d.certStatus === '已通过') certified++;
+        else if (d.certStatus === '未通过' || d.certStatus === '未合格') failed++;
+        else pending++;
+      });
+
+      var metricCards = document.querySelectorAll('.metric-card .metric-value');
+      if (metricCards.length >= 4) {
+        metricCards[0].textContent = total;
+        metricCards[1].textContent = certified;
+        metricCards[2].textContent = pending;
+        metricCards[3].textContent = failed;
+      }
+
+      var passRate = total > 0 ? ((certified / total) * 100).toFixed(1) : 0;
+      var failRate = total > 0 ? ((failed / total) * 100).toFixed(1) : 0;
+      var pendingRate = total > 0 ? ((pending / total) * 100).toFixed(1) : 0;
+
+      var metricPercents = document.querySelectorAll('.metric-card .metric-subtitle');
+      if (metricPercents.length >= 4) {
+        metricPercents[0].textContent = '认证总数';
+        metricPercents[1].textContent = passRate + '%';
+        metricPercents[2].textContent = pendingRate + '%';
+        metricPercents[3].textContent = failRate + '%';
+      }
+
+      updateDeptDistributionFromData(data);
+      updateReminderListFromData(data);
+    }
+
+    // 从AI表格数据更新三级部门分布
+    function updateDeptDistributionFromData(data) {
+      var deptMap = {};
+      data.forEach(function(d) {
+        var dept = d.dept3 || '未分配';
+        if (!deptMap[dept]) deptMap[dept] = { total: 0, pending: 0, failed: 0 };
+        deptMap[dept].total++;
+        if (d.certStatus === '未参与' || d.certStatus === '未参加') deptMap[dept].pending++;
+        else if (d.certStatus === '未通过' || d.certStatus === '未合格') deptMap[dept].failed++;
+      });
+
+      var sorted = Object.keys(deptMap).map(function(dept) {
+        return { dept: dept, ...deptMap[dept] };
+      }).sort(function(a, b) { return (b.pending + b.failed) - (a.pending + a.failed); });
+
+      var container = document.querySelector('.chart-bars');
+      if (!container) return;
+
+      var maxVal = 0;
+      sorted.forEach(function(d) {
+        var total = d.pending + d.failed;
+        if (total > maxVal) maxVal = total;
+      });
+
+      var html = '';
+      sorted.slice(0, 15).forEach(function(d) {
+        var total = d.pending + d.failed;
+        var height = maxVal > 0 ? (total / maxVal * 180) : 0;
+        var colorClass = total <= 3 ? 'bar-blue' : (total <= 6 ? 'bar-orange' : 'bar-red');
+        html += '<div class="chart-bar-group">';
+        html += '<div class="chart-bar-value">' + total + '</div>';
+        html += '<div class="chart-bar ' + colorClass + '" style="height:' + Math.max(height, 8) + 'px" data-value="' + d.dept + '：未参与' + d.pending + '人，未通过' + d.failed + '人，共' + total + '人"></div>';
+        html += '<div class="chart-bar-label" title="' + d.dept + '">' + d.dept.substring(0, 6) + '</div>';
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    // 从AI表格数据更新提醒列表
+    function updateReminderListFromData(data) {
+      var pendingList = data.filter(function(d) {
+        return d.certStatus === '未参与' || d.certStatus === '未参加' || d.certStatus === '未通过' || d.certStatus === '未合格';
+      });
+
+      var listEl = document.querySelector('.reminder-list');
+      if (!listEl) return;
+
+      var html = '';
+      pendingList.slice(0, 20).forEach(function(d) {
+        var statusClass = (d.certStatus === '未通过' || d.certStatus === '未合格') ? 'status-failed' : 'status-pending';
+        var statusText = (d.certStatus === '未通过' || d.certStatus === '未合格') ? '未通过' : '未参与';
+        html += '<div class="reminder-item">';
+        html += '<label class="reminder-checkbox-wrapper"><input type="checkbox" class="reminder-checkbox"><span class="checkmark"></span></label>';
+        html += '<div class="reminder-info">';
+        html += '<div class="reminder-name">' + d.name + '</div>';
+        html += '<div class="reminder-detail">' + d.empId + ' · ' + d.dept3 + '</div>';
+        html += '</div>';
+        html += '<span class="reminder-status ' + statusClass + '">' + statusText + '</span>';
+        html += '</div>';
+      });
+      listEl.innerHTML = html;
+    }
+
+    // 绑定导航点击事件
+    (function() {
+      var navItems = document.querySelectorAll('.nav-item[data-module]');
+      for (var i = 0; i < navItems.length; i++) {
+        navItems[i].onclick = (function(item) {
+          return function(e) {
+            // 更新活跃状态
+            var allNavs = document.querySelectorAll('.nav-item');
+            for (var j = 0; j < allNavs.length; j++) {
+              allNavs[j].classList.remove('active');
+            }
+            item.classList.add('active');
+            // 切换模块
+            var moduleId = item.getAttribute('data-module');
+            switchModule(moduleId);
+          };
+        })(navItems[i]);
+      }
+    })();
+
+    // 一键提醒功能
+    function sendReminder() {
+      const checked = document.querySelectorAll('.reminder-checkbox:checked');
+      if (checked.length === 0) {
+        alert('请先选择需要提醒的人员');
+        return;
+      }
+      
+      const names = Array.from(checked).map(cb => {
+        const item = cb.closest('.reminder-item');
+        return item.querySelector('.reminder-name').textContent;
+      });
+      
+      // 模拟发送企业IM消息
+      const message = `【师兄认证提醒】\n以下${names.length}位同学需完成认证：\n${names.join('、')}\n\n请及时完成认证考核。`;
+      alert('即将通过企业IM发送提醒：\n\n' + message);
+    }
+
+    // 全选/反选功能
+    document.querySelectorAll('.batch-actions .card-action-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const text = this.textContent.trim();
+        const checkboxes = document.querySelectorAll('.reminder-checkbox');
+        
+        if (text === '全选') {
+          checkboxes.forEach(cb => cb.checked = true);
+        } else if (text === '仅未通过') {
+          checkboxes.forEach(cb => {
+            const item = cb.closest('.reminder-item');
+            const status = item.querySelector('.reminder-status');
+            cb.checked = status.classList.contains('failed');
+          });
+        } else if (text === '仅未参与') {
+          checkboxes.forEach(cb => {
+            const item = cb.closest('.reminder-item');
+            const status = item.querySelector('.reminder-status');
+            cb.checked = status.classList.contains('pending');
+          });
+        }
+        
+        updateCount();
+      });
+    });
+
+    // 更新已选择人数
+    document.querySelectorAll('.reminder-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateCount);
+    });
+
+    function updateCount() {
+      const count = document.querySelectorAll('.reminder-checkbox:checked').length;
+      document.querySelector('.batch-actions .count strong').textContent = count;
+    }
+
+    // ===== 多数据源 Excel 导入功能 =====
+    (function() {
+      // 数据存储
+      var mentorData = [];        // 师兄名单（独立）
+      var whiteCollarData = [];   // 白领&CCA认证
+      var groupBuyData = [];      // 爆品团认证
+      var submitData = [];        // 认证提报
+      var mergedCertData = [];    // 合并后的认证数据
+
+      // ===== localStorage 数据持久化 =====
+      var STORAGE_KEYS = {
+        mentor: 'board_mentorData',
+        whiteCollar: 'board_whiteCollarData',
+        groupBuy: 'board_groupBuyData',
+        submit: 'board_submitData',
+        merged: 'board_mergedCertData'
+      };
+
+      // 保存数据到localStorage
+      function saveToStorage(key, data) {
+        try {
+          localStorage.setItem(STORAGE_KEYS[key], JSON.stringify(data));
+        } catch (e) {
+          console.warn('保存数据失败:', e);
+        }
+      }
+
+      // 从localStorage加载数据
+      function loadFromStorage(key) {
+        try {
+          var stored = localStorage.getItem(STORAGE_KEYS[key]);
+          return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+          console.warn('加载数据失败:', e);
+          return [];
+        }
+      }
+
+      // 页面加载时恢复数据
+      async function loadStoredData() {
+        // 优先尝试从服务器加载数据文件
+        try {
+          var response = await fetch('./data.json');
+          if (response.ok) {
+            var serverData = await response.json();
+            mentorData = serverData.mentorData || [];
+            whiteCollarData = serverData.whiteCollarData || [];
+            groupBuyData = serverData.groupBuyData || [];
+            submitData = serverData.submitData || [];
+            mergedCertData = serverData.mergedCertData || [];
+
+            // 更新UI
+            if (mentorData.length > 0) {
+              updateMentorTable(mentorData);
+              updateDeptAnalysis(mentorData);
+              updateDirectDeptAnalysis(mentorData);
+              updateFY27Stats(mentorData);
+              files.mentor.status.textContent = '已加载服务器数据: ' + mentorData.length + '条';
+              files.mentor.area.classList.add('uploaded');
+            }
+            if (mergedCertData.length > 0) {
+              updateCertDashboard(mergedCertData);
+              updateDeptDistribution(mergedCertData);
+              updateReminderList(mergedCertData);
+            }
+            console.log('已从服务器加载数据');
+            return; // 服务器数据加载成功，跳过localStorage
+          }
+        } catch (e) {
+          console.log('服务器数据文件不存在，尝试localStorage');
+        }
+
+        // 如果服务器数据加载失败，尝试localStorage
+        mentorData = loadFromStorage('mentor');
+        whiteCollarData = loadFromStorage('whiteCollar');
+        groupBuyData = loadFromStorage('groupBuy');
+        submitData = loadFromStorage('submit');
+        mergedCertData = loadFromStorage('merged');
+
+        // 如果有存储的数据，恢复UI状态
+        if (mentorData.length > 0) {
+          updateMentorTable(mentorData);
+          updateDeptAnalysis(mentorData);
+          updateDirectDeptAnalysis(mentorData);
+          updateFY27Stats(mentorData);
+          files.mentor.status.textContent = '已加载缓存: ' + mentorData.length + '条';
+          files.mentor.area.classList.add('uploaded');
+        }
+        if (whiteCollarData.length > 0) {
+          files['white-collar'].status.textContent = '已加载缓存: ' + whiteCollarData.length + '条';
+          files['white-collar'].area.classList.add('uploaded');
+        }
+        if (groupBuyData.length > 0) {
+          files['group-buy'].status.textContent = '已加载缓存: ' + groupBuyData.length + '条';
+          files['group-buy'].area.classList.add('uploaded');
+        }
+        if (submitData.length > 0) {
+          files.submit.status.textContent = '已加载缓存: ' + submitData.length + '条';
+          files.submit.area.classList.add('uploaded');
+        }
+        if (mergedCertData.length > 0) {
+          updateCertDashboard(mergedCertData);
+          updateDeptDistribution(mergedCertData);
+          updateReminderList(mergedCertData);
+        }
+      }
+
+      // 清空所有存储数据
+      function clearAllData() {
+        Object.keys(STORAGE_KEYS).forEach(function(key) {
+          localStorage.removeItem(STORAGE_KEYS[key]);
+        });
+        mentorData = [];
+        whiteCollarData = [];
+        groupBuyData = [];
+        submitData = [];
+        mergedCertData = [];
+        
+        // 重置UI
+        Object.keys(files).forEach(function(key) {
+          if (files[key] && files[key].status) files[key].status.textContent = '';
+          if (files[key] && files[key].area) files[key].area.classList.remove('uploaded');
+        });
+        
+        // 重置表格
+        var tableBody = document.querySelector('.mentor-table tbody');
+        if (tableBody) {
+          tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 40px;">请导入师兄名单Excel文件</td></tr>';
+        }
+        
+        // 重置图表
+        var deptChart = document.getElementById('dept-chart');
+        if (deptChart) deptChart.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary); padding: 40px;">暂无数据</div>';
+        
+        var directDeptChart = document.getElementById('direct-dept-chart');
+        if (directDeptChart) directDeptChart.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary); padding: 40px;">暂无直营业务中心数据</div>';
+        
+        // 重置FY27统计
+        updateFY27Stats([]);
+        
+        // 重置指标卡片
+        var metricCards = document.querySelectorAll('.metric-card .metric-value');
+        if (metricCards.length >= 4) {
+          metricCards[0].textContent = '0';
+          metricCards[1].textContent = '0';
+          metricCards[2].textContent = '0';
+          metricCards[3].textContent = '0';
+        }
+        
+        // 重置三级部门分布图
+        var deptDistChart = document.getElementById('dept-dist-chart');
+        if (deptDistChart) deptDistChart.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary); padding: 40px;">暂无数据</div>';
+        
+        // 重置提醒列表
+        var reminderList = document.querySelector('.reminder-list');
+        if (reminderList) reminderList.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-tertiary); font-size: 13px;">暂无需要提醒的人员</div>';
+        
+        showGlobalStatus('已清空所有缓存数据', 'success');
+      }
+
+      // DOM元素
+      var files = {
+        mentor: { input: document.getElementById('file-mentor'), status: document.getElementById('mentor-status'), area: document.getElementById('import-area-mentor') },
+        'white-collar': { input: document.getElementById('file-white-collar'), status: document.getElementById('white-collar-status'), area: document.getElementById('import-area-white-collar') },
+        'group-buy': { input: document.getElementById('file-group-buy'), status: document.getElementById('group-buy-status'), area: document.getElementById('import-area-group-buy') },
+        'submit': { input: document.getElementById('file-submit'), status: document.getElementById('submit-status'), area: document.getElementById('import-area-submit') }
+      };
+
+      var btnMergeCert = document.getElementById('btn-merge-cert');
+      var btnClear = document.getElementById('btn-clear-data');
+      var navClear = document.getElementById('nav-clear-data');
+      var globalStatus = document.getElementById('global-status');
+      var globalStatusText = document.getElementById('global-status-text');
+
+      // 绑定文件选择
+      Object.keys(files).forEach(function(key) {
+        var f = files[key];
+        if (f.input) {
+          f.input.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+              parseExcel(e.target.files[0], key);
+            }
+          });
+        }
+      });
+
+      // 解析Excel
+      function parseExcel(file, type) {
+        if (!file.name.match(/\.(xlsx|xls)$/i)) {
+          showGlobalStatus('请选择 .xlsx 或 .xls 格式文件', 'error');
+          return;
+        }
+
+        files[type].status.textContent = '正在解析...';
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            var data = new Uint8Array(e.target.result);
+            var workbook = XLSX.read(data, { type: 'array' });
+            var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (jsonData.length < 2) {
+              files[type].status.textContent = '文件内容为空';
+              return;
+            }
+
+            var parsed = parseData(jsonData, type);
+            
+            if (type === 'mentor') {
+              mentorData = parsed;
+              saveToStorage('mentor', mentorData);
+              // 师兄名单独立更新模块一
+              updateMentorTable(mentorData);
+              updateDeptAnalysis(mentorData);
+              updateDirectDeptAnalysis(mentorData);
+              updateFY27Stats(mentorData);
+              files[type].status.textContent = '已更新模块一: ' + file.name + ' (' + parsed.length + '条)';
+              showGlobalStatus('师兄名单已更新模块一，共 ' + parsed.length + ' 位师兄', 'success');
+            } else if (type === 'white-collar') {
+              whiteCollarData = parsed;
+              saveToStorage('whiteCollar', whiteCollarData);
+              files[type].status.textContent = '已上传: ' + file.name + ' (' + parsed.length + '条)';
+            } else if (type === 'group-buy') {
+              groupBuyData = parsed;
+              saveToStorage('groupBuy', groupBuyData);
+              files[type].status.textContent = '已上传: ' + file.name + ' (' + parsed.length + '条)';
+            } else if (type === 'submit') {
+              submitData = parsed;
+              saveToStorage('submit', submitData);
+              files[type].status.textContent = '已上传: ' + file.name + ' (' + parsed.length + '条)';
+            }
+
+            files[type].area.classList.add('uploaded');
+
+          } catch (err) {
+            files[type].status.textContent = '解析失败: ' + err.message;
+            showGlobalStatus('解析失败: ' + err.message, 'error');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      // 解析数据
+      function parseData(rows, type) {
+        var headers = rows[0];
+        var colMap = {};
+
+        for (var i = 0; i < headers.length; i++) {
+          var h = String(headers[i]).toLowerCase().trim();
+          if (h.includes('姓名') || h === 'name') colMap.name = i;
+          else if (h.includes('师兄阿里工号') || (h.includes('师兄') && h.includes('工号'))) colMap.mentorEmpId = i; // 师兄阿里工号（用于聚合）
+          else if (h.includes('工号') || h.includes('emp') || h.includes('employee')) colMap.empId = i;
+          else if (h.includes('一级部门')) colMap.dept1 = i;
+          else if (h.includes('二级部门')) colMap.dept2 = i;
+          else if (h.includes('三级部门')) colMap.dept3 = i;
+          else if (h.includes('四级部门')) colMap.dept4 = i;
+          else if (h.includes('徒弟') || h.includes('带教')) colMap.apprentice = i;
+          else if (h.includes('认证状态') || h.includes('状态') || h.includes('result') || h.includes('通过状态')) colMap.certStatus = i;
+          else if (h.includes('开始时间') || h.includes('活动开始') || h.includes('start') || h.includes('发起时间')) colMap.startDate = i;
+          else if (h.includes('结束时间') || h.includes('活动结束') || h.includes('date')) colMap.endDate = i;
+          else if (h.includes('认证类型') || h.includes('类型')) colMap.certType = i;
+          else if (h.includes('提报') || h.includes('申请')) colMap.submitted = i;
+          else if (h.includes('徒弟工号') || (h.includes('徒弟') && h.includes('工号'))) colMap.apprenticeEmpId = i;
+          else if (h.includes('学习进度') || h.includes('活动进度') || h.includes('进度')) colMap.learnProgress = i;
+        }
+
+        // 默认列（根据实际Excel结构调整）
+        if (colMap.name === undefined) colMap.name = 0;
+        if (colMap.empId === undefined) colMap.empId = 1;
+        if (colMap.dept1 === undefined) colMap.dept1 = 3; // 一级部门在第4列
+        if (colMap.dept2 === undefined) colMap.dept2 = 4; // 二级部门在第5列
+        if (colMap.dept3 === undefined) colMap.dept3 = 5; // 三级部门在第6列
+        if (colMap.dept4 === undefined) colMap.dept4 = 6; // 四级部门在第7列
+        if (colMap.apprentice === undefined) colMap.apprentice = 7; // 带教徒弟数在第8列
+        if (colMap.certStatus === undefined) colMap.certStatus = 8;
+        if (colMap.endDate === undefined) colMap.endDate = 9;
+
+        // 调试：打印列映射
+        console.log('=== Excel列映射 ===');
+        console.log('表头:', headers);
+        console.log('列映射:', colMap);
+        console.log('示例数据行1:', rows[1]);
+        console.log('解析后的dept2值:', rows[1] ? rows[1][colMap.dept2] : 'N/A');
+        console.log('解析后的dept3值:', rows[1] ? rows[1][colMap.dept3] : 'N/A');
+
+        // 提报表：直接解析，不去重
+        if (type === 'submit') {
+          var result = [];
+          for (var i = 1; i < rows.length; i++) {
+            var row = rows[i];
+            if (!row[colMap.name]) continue;
+
+            result.push({
+              name: row[colMap.name] || '',
+              empId: String(row[colMap.empId] || '').trim(),
+              dept2: row[colMap.dept2] || '未分配',
+              dept3: row[colMap.dept3] || '未分配',
+              dept4: row[colMap.dept4] || '-',
+              apprentice: 0,
+              certStatus: normalizeCertStatus(row[colMap.certStatus]),
+              learnProgress: colMap.learnProgress !== undefined ? (row[colMap.learnProgress] || '') : '',
+              startDate: colMap.startDate !== undefined ? parseDate(row[colMap.startDate]) : null,
+              endDate: colMap.endDate !== undefined ? parseDate(row[colMap.endDate]) : null,
+              certType: row[colMap.certType] || '',
+              submitted: true
+            });
+          }
+          return result;
+        }
+
+        // 师兄名单：按师兄阿里工号聚合
+        var byEmp = {};
+        for (var i = 1; i < rows.length; i++) {
+          var row = rows[i];
+          if (!row[colMap.name]) continue;
+
+          // 使用师兄阿里工号作为聚合基准
+          var mentorEmpId = colMap.mentorEmpId !== undefined ? String(row[colMap.mentorEmpId] || '').trim() : '';
+          var empId = mentorEmpId || String(row[colMap.empId] || '').trim();
+          if (!empId) continue;
+
+          if (!byEmp[empId]) {
+            byEmp[empId] = {
+              name: row[colMap.name] || '',
+              empId: empId,
+              dept2: row[colMap.dept2] || '未分配',
+              dept3: row[colMap.dept3] || '未分配',
+              dept4: row[colMap.dept4] || '-',
+              apprenticeCount: 0,
+              apprenticeIds: [],
+              certStatus: normalizeCertStatus(row[colMap.certStatus]),
+              learnProgress: colMap.learnProgress !== undefined ? (row[colMap.learnProgress] || '') : '',
+              startDate: colMap.startDate !== undefined ? parseDate(row[colMap.startDate]) : null,
+              endDate: colMap.endDate !== undefined ? parseDate(row[colMap.endDate]) : null,
+              certType: row[colMap.certType] || '',
+              submitted: colMap.submitted !== undefined ? (row[colMap.submitted] ? true : false) : true
+            };
+            
+            // 调试：打印前3条记录的部门信息
+            if (Object.keys(byEmp).length <= 3) {
+              console.log('记录' + Object.keys(byEmp).length + ':', {
+                name: row[colMap.name],
+                mentorEmpId: mentorEmpId,
+                empId: empId,
+                dept2: row[colMap.dept2],
+                dept3: row[colMap.dept3],
+                dept4: row[colMap.dept4]
+              });
+            }
+          }
+
+          // 累加带教徒弟数
+          var apprenticeNum = parseInt(row[colMap.apprentice]) || 1;
+          byEmp[empId].apprenticeCount += apprenticeNum;
+
+          // 记录徒弟工号（去重）
+          if (colMap.apprenticeEmpId !== undefined && row[colMap.apprenticeEmpId]) {
+            var aid = String(row[colMap.apprenticeEmpId]).trim();
+            if (aid && byEmp[empId].apprenticeIds.indexOf(aid) === -1) {
+              byEmp[empId].apprenticeIds.push(aid);
+            }
+          }
+        }
+
+        // 转为数组，使用去重后的徒弟工号数量作为带教总数
+        var result = [];
+        Object.keys(byEmp).forEach(function(empId) {
+          var d = byEmp[empId];
+          // 如果有徒弟工号列，用工号去重后的数量；否则用累加值
+          d.apprentice = d.apprenticeIds.length > 0 ? d.apprenticeIds.length : d.apprenticeCount;
+          delete d.apprenticeIds;
+          delete d.apprenticeCount;
+          result.push(d);
+        });
+
+        return result;
+      }
+
+      // 标准化认证状态
+      function normalizeCertStatus(status) {
+        if (!status) return '未参与';
+        var s = String(status).trim();
+        
+        // 未通过/失败（必须先判断，因为"未通过"包含"通过"）
+        if (s.includes('未通过') || s.includes('不合格') || s.includes('失败') || s.includes('未合格') || s === 'fail' || s === 'Fail') return '未通过';
+        
+        // 已认证/通过
+        if (s.includes('通过') || s.includes('已认证') || s.includes('合格') || s.includes('完成') || s === 'pass' || s === 'Pass') return '已认证';
+        
+        // 认证中/进行中
+        if (s.includes('进行') || s.includes('中') || s.includes('审核') || s.includes('认证中') || s.includes('学习中') || s.includes('待认证')) return '认证中';
+        
+        // 未参与/未开始
+        if (s.includes('未') || s.includes('无') || s.includes('空') || s.includes('未参与') || s.includes('未开始') || s.includes('缺考')) return '未参与';
+        
+        return '未参与';
+      }
+
+      // 解析日期
+      function parseDate(val) {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        var s = String(val).trim();
+        var d = new Date(s);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      // 合并认证数据（以提报表为基准，智能匹配两个进度表的认证状态）
+      function mergeCertData() {
+        if (submitData.length === 0) {
+          showGlobalStatus('请先上传"师兄认证提报&进度表"作为基准数据', 'error');
+          return;
+        }
+
+        // 构建白领&CCA认证索引（一个工号可能有多条记录，保留最近的）
+        var whiteCollarMap = {};
+        var whiteCollarMatchCount = 0;
+        whiteCollarData.forEach(function(d) {
+          if (d.empId) {
+            // 标准化工号：去空格、转字符串、去前导零、转大写
+            var normalizedId = String(d.empId).trim().replace(/^0+/, '').toUpperCase();
+            if (!normalizedId) return;
+            // 如果已有记录，保留开始时间最近的
+            if (!whiteCollarMap[normalizedId] || (d.startDate && whiteCollarMap[normalizedId].startDate && d.startDate > whiteCollarMap[normalizedId].startDate)) {
+              whiteCollarMap[normalizedId] = {
+                certStatus: d.certStatus,
+                learnProgress: d.learnProgress || d.certStatus,
+                startDate: d.startDate,
+                endDate: d.endDate,
+                certType: d.certType || '白领&CCA',
+                rawEmpId: d.empId
+              };
+              whiteCollarMatchCount++;
+            }
+          }
+        });
+
+        // 构建爆品团认证索引
+        var groupBuyMap = {};
+        var groupBuyMatchCount = 0;
+        groupBuyData.forEach(function(d) {
+          if (d.empId) {
+            var normalizedId = String(d.empId).trim().replace(/^0+/, '').toUpperCase();
+            if (!normalizedId) return;
+            if (!groupBuyMap[normalizedId] || (d.startDate && groupBuyMap[normalizedId].startDate && d.startDate > groupBuyMap[normalizedId].startDate)) {
+              groupBuyMap[normalizedId] = {
+                certStatus: d.certStatus,
+                learnProgress: d.learnProgress || d.certStatus,
+                startDate: d.startDate,
+                endDate: d.endDate,
+                certType: d.certType || '爆品团',
+                rawEmpId: d.empId
+              };
+              groupBuyMatchCount++;
+            }
+          }
+        });
+
+        // 以提报表为基准，智能匹配认证状态
+        var matchedCount = 0;
+        var emptyStatusCount = 0;
+        var updatedFromProgress = 0;
+        var unmatchedDebug = [];
+        
+        mergedCertData = submitData.map(function(d) {
+          // 标准化工号：去空格、去前导零、转大写
+          var normalizedEmpId = String(d.empId).trim().replace(/^0+/, '').toUpperCase();
+          var whiteCollar = whiteCollarMap[normalizedEmpId];
+          var groupBuy = groupBuyMap[normalizedEmpId];
+          
+          var finalStatus = d.certStatus;
+          var finalLearnProgress = d.learnProgress || '';
+          var sources = ['提报'];
+          var sourcesList = [];
+          
+          if (whiteCollar) sourcesList.push('白领&CCA');
+          if (groupBuy) sourcesList.push('爆品团');
+
+          // 如果提报表认证状态为空或是"未参与"，从进度表中智能匹配
+          if (!d.certStatus || d.certStatus === '' || d.certStatus === '未参与') {
+            emptyStatusCount++;
+            
+            // 记录调试信息
+            if (!whiteCollar && !groupBuy) {
+              unmatchedDebug.push({
+                empId: d.empId,
+                normalizedId: normalizedEmpId,
+                name: d.name
+              });
+            }
+            
+            // 优先取"已认证/已通过"
+            if (whiteCollar && whiteCollar.certStatus === '已认证') {
+              finalStatus = '已认证';
+              finalLearnProgress = whiteCollar.learnProgress || finalLearnProgress;
+              updatedFromProgress++;
+              matchedCount++;
+            } else if (groupBuy && groupBuy.certStatus === '已认证') {
+              finalStatus = '已认证';
+              finalLearnProgress = groupBuy.learnProgress || finalLearnProgress;
+              updatedFromProgress++;
+              matchedCount++;
+            } else {
+              // 没有"已认证"，取最近活动开始时间对应的通过状态
+              var latest = null;
+              var latestDate = null;
+              
+              if (whiteCollar && whiteCollar.startDate) {
+                latest = whiteCollar;
+                latestDate = whiteCollar.startDate;
+              }
+              if (groupBuy && groupBuy.startDate) {
+                if (!latestDate || groupBuy.startDate > latestDate) {
+                  latest = groupBuy;
+                  latestDate = groupBuy.startDate;
+                }
+              }
+              
+              // 使用最近活动的通过状态
+              if (latest) {
+                finalStatus = latest.certStatus;
+                finalLearnProgress = latest.learnProgress || finalLearnProgress;
+                updatedFromProgress++;
+                matchedCount++;
+              }
+            }
+          } else {
+            // 提报表本身有状态
+            matchedCount++;
+          }
+
+          return {
+            name: d.name,
+            empId: d.empId,
+            dept2: d.dept2,
+            dept3: d.dept3,
+            dept4: d.dept4,
+            apprentice: d.apprentice,
+            certStatus: finalStatus,
+            learnProgress: finalLearnProgress,
+            certType: ['提报'].concat(sourcesList).join('+')
+          };
+        });
+
+        // 打印调试信息
+        console.log('=== 认证数据合并调试 ===');
+        console.log('提报表总数:', submitData.length);
+        console.log('白领&CCA索引记录:', whiteCollarMatchCount, '(唯一工号:', Object.keys(whiteCollarMap).length, ')');
+        console.log('爆品团索引记录:', groupBuyMatchCount, '(唯一工号:', Object.keys(groupBuyMap).length, ')');
+        console.log('提报表中状态为空/未参与:', emptyStatusCount);
+        console.log('从进度表更新状态:', updatedFromProgress);
+        console.log('匹配到进度表数据:', matchedCount);
+        
+        // 打印未匹配工号示例（前10个）
+        if (unmatchedDebug.length > 0) {
+          console.log('=== 未匹配工号示例（提报表有但进度表无）===');
+          unmatchedDebug.slice(0, 10).forEach(function(item) {
+            console.log('原始工号:', item.empId, '| 标准化后:', item.normalizedId, '| 姓名:', item.name);
+          });
+          console.log('未匹配总数:', unmatchedDebug.length);
+        }
+        
+        // 打印空状态记录的详细信息（前10条）
+        var emptyStatusRecords = submitData.filter(function(d) {
+          return !d.certStatus || d.certStatus === '' || d.certStatus === '未参与';
+        }).slice(0, 10);
+        
+        if (emptyStatusRecords.length > 0) {
+          console.log('=== 空状态记录示例 ===');
+          emptyStatusRecords.forEach(function(rec) {
+            var normalizedId = String(rec.empId).trim().replace(/^0+/, '').toUpperCase();
+            var wc = whiteCollarMap[normalizedId];
+            var gb = groupBuyMap[normalizedId];
+            console.log('工号:', rec.empId, '| 标准化:', normalizedId, '| 姓名:', rec.name, 
+              '| 提报状态:', rec.certStatus,
+              '| 白领&CCA:', wc ? (wc.certStatus + ' [' + wc.rawEmpId + ']') : '无匹配',
+              '| 爆品团:', gb ? (gb.certStatus + ' [' + gb.rawEmpId + ']') : '无匹配');
+          });
+        }
+        
+        // 打印未匹配到状态的示例（前10个），显示进度表中的原始状态
+        var unmatchedExamples = mergedCertData.filter(function(d) {
+          return d.certStatus === '未参与' && (d.certType.includes('白领&CCA') || d.certType.includes('爆品团'));
+        }).slice(0, 10);
+        
+        if (unmatchedExamples.length > 0) {
+          console.log('=== 未匹配示例（状态仍为未参与但匹配到了进度表）===');
+          unmatchedExamples.forEach(function(ex) {
+            var normalizedId = String(ex.empId).trim().replace(/^0+/, '').toUpperCase();
+            var wc = whiteCollarMap[normalizedId];
+            var gb = groupBuyMap[normalizedId];
+            console.log('工号:', ex.empId, '| 姓名:', ex.name, '| 数据源:', ex.certType, 
+              '| 白领&CCA状态:', wc ? wc.certStatus : '无', 
+              '| 爆品团状态:', gb ? gb.certStatus : '无');
+          });
+        }
+        
+        // 打印状态分布
+        var statusCount = { '已认证': 0, '认证中': 0, '未通过': 0, '未参与': 0 };
+        mergedCertData.forEach(function(d) {
+          if (statusCount[d.certStatus] !== undefined) {
+            statusCount[d.certStatus]++;
+          }
+        });
+        console.log('=== 合并后状态分布 ===', statusCount);
+
+        // 更新模块二
+        updateMetrics(mergedCertData);
+        updateDeptDistribution(mergedCertData);
+        updateReminderList(mergedCertData);
+        
+        // 保存合并后的数据到localStorage
+        saveToStorage('merged', mergedCertData);
+
+        // 统计匹配情况
+        var matchCount = mergedCertData.filter(function(d) {
+          return d.certType.includes('白领&CCA') || d.certType.includes('爆品团');
+        }).length;
+
+        showGlobalStatus('认证数据合并完成！共 ' + mergedCertData.length + ' 位师兄（其中 ' + matchCount + ' 位匹配到进度表数据）', 'success');
+      }
+
+      // 更新师兄名单表格（模块一）
+      function updateMentorTable(mentors) {
+        var tbody = document.querySelector('#module-mentor-list tbody');
+        if (!tbody) return;
+
+        var html = '';
+        var avatarGradients = ['var(--avatar-blue)', 'var(--avatar-green)', 'var(--avatar-orange)', 'var(--avatar-gray)'];
+        
+        for (var i = 0; i < Math.min(mentors.length, 50); i++) {
+          var m = mentors[i];
+          var gradient = avatarGradients[i % avatarGradients.length];
+          html += '<tr>';
+          html += '<td><div class="user-cell"><div class="avatar" style="background: ' + gradient + ';">' + m.name.charAt(0) + '</div>';
+          html += '<div class="user-info"><span class="user-name">' + m.name + '</span></div></div></td>';
+          html += '<td>' + m.empId + '</td>';
+          html += '<td>' + m.dept2 + '</td>';
+          html += '<td>' + m.dept3 + '</td>';
+          html += '<td>' + m.dept4 + '</td>';
+          html += '<td>' + m.apprentice + '</td>';
+          html += '</tr>';
+        }
+
+        if (mentors.length > 50) {
+          html += '<tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 16px;">仅显示前50条，共 ' + mentors.length + ' 条记录</td></tr>';
+        }
+
+        tbody.innerHTML = html;
+      }
+
+      // 更新FY27统计数据
+      function updateFY27Stats(mentors) {
+        if (!mentors || mentors.length === 0) {
+          document.getElementById('fy27-total').textContent = '0';
+          document.getElementById('fy27-direct').textContent = '0';
+          document.getElementById('fy27-apprentices').textContent = '0';
+          document.getElementById('fy27-depts').textContent = '0';
+          return;
+        }
+
+        // 1. 师兄总人数
+        var totalMentors = mentors.length;
+        
+        // 2. 直营业务中心人数
+        var directCount = 0;
+        var deptSet = new Set();
+        
+        // 3. 带教徒弟总数
+        var totalApprentices = 0;
+        
+        for (var i = 0; i < mentors.length; i++) {
+          var m = mentors[i];
+          
+          // 统计直营业务中心
+          if (m.dept2 && m.dept2.indexOf('直营') !== -1 && m.dept2.indexOf('业务') !== -1) {
+            directCount++;
+          }
+          
+          // 统计覆盖部门数（二级部门去重）
+          if (m.dept2 && m.dept2 !== '未分配') {
+            deptSet.add(m.dept2);
+          }
+          
+          // 累加带教徒弟数
+          if (m.apprentice) {
+            totalApprentices += parseInt(m.apprentice) || 0;
+          }
+        }
+        
+        // 更新DOM
+        document.getElementById('fy27-total').textContent = totalMentors;
+        document.getElementById('fy27-direct').textContent = directCount;
+        document.getElementById('fy27-apprentices').textContent = totalApprentices;
+        document.getElementById('fy27-depts').textContent = deptSet.size;
+      }
+
+      // 更新二级部门分析（模块一）- 柱状图
+      function updateDeptAnalysis(mentors) {
+        var deptMap = {};
+
+        for (var i = 0; i < mentors.length; i++) {
+          var m = mentors[i];
+          var dept2 = m.dept2;
+
+          // 只按二级部门统计
+          if (dept2 && dept2 !== '未分配') {
+            if (!deptMap[dept2]) deptMap[dept2] = { total: 0 };
+            deptMap[dept2].total++;
+          } else {
+            // 未分配的统一归类
+            if (!deptMap['未分配']) deptMap['未分配'] = { total: 0 };
+            deptMap['未分配'].total++;
+          }
+        }
+
+        var chartContainer = document.getElementById('dept-chart');
+        var legendContainer = document.getElementById('dept-chart-legend');
+        if (!chartContainer) return;
+
+        // 转为数组
+        var allDepts = [];
+        Object.keys(deptMap).forEach(function(dept) {
+          allDepts.push({
+            name: dept,
+            total: deptMap[dept].total
+          });
+        });
+
+        // 按人数降序排列
+        allDepts.sort(function(a, b) {
+          return b.total - a.total;
+        });
+
+        if (allDepts.length === 0) {
+          chartContainer.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary); padding: 40px;">暂无数据</div>';
+          legendContainer.innerHTML = '';
+          return;
+        }
+
+        var maxVal = Math.max.apply(null, allDepts.map(function(d) {
+          return d.total;
+        }));
+
+        // 生成柱状图
+        var html = '';
+        for (var j = 0; j < allDepts.length; j++) {
+          var d = allDepts[j];
+          var height = maxVal > 0 ? (d.total / maxVal * 180) : 0;
+          var title = d.name + ': ' + d.total + '人';
+          
+          html += '<div class="dept-bar-group">';
+          html += '<div class="dept-bar-value">' + d.total + '</div>';
+          html += '<div class="dept-bar" style="height: ' + Math.max(height, 8) + 'px;" title="' + title + '"></div>';
+          html += '<div class="dept-bar-label">' + d.name + '</div>';
+          html += '</div>';
+        }
+
+        chartContainer.innerHTML = html;
+
+        // 生成图例
+        legendContainer.innerHTML = '<div class="dept-chart-legend-item"><span class="dept-chart-legend-dot" style="background: linear-gradient(180deg, var(--accent-primary), var(--accent-violet));"></span>师兄人数</div>';
+      }
+
+      // 更新直营业务中心分布（模块一）- 独立柱状图
+      function updateDirectDeptAnalysis(mentors) {
+        var directDeptMap = {};
+
+        for (var i = 0; i < mentors.length; i++) {
+          var m = mentors[i];
+          var dept2 = m.dept2;
+          var dept3 = m.dept3;
+
+          // 只统计直营业务中心
+          if (dept2 && dept2.indexOf('直营') !== -1 && dept2.indexOf('业务') !== -1) {
+            var key = dept3 || '未填写';
+            if (!directDeptMap[key]) {
+              directDeptMap[key] = { total: 0, dept3: key };
+            }
+            directDeptMap[key].total++;
+          }
+        }
+
+        var chartContainer = document.getElementById('direct-dept-chart');
+        var legendContainer = document.getElementById('direct-dept-chart-legend');
+        if (!chartContainer) return;
+
+        var allDepts = [];
+        Object.keys(directDeptMap).forEach(function(dept) {
+          allDepts.push({
+            name: directDeptMap[dept].dept3,
+            total: directDeptMap[dept].total
+          });
+        });
+
+        // 按人数降序排列
+        allDepts.sort(function(a, b) {
+          return b.total - a.total;
+        });
+
+        if (allDepts.length === 0) {
+          chartContainer.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary); padding: 40px;">暂无直营业务中心数据</div>';
+          legendContainer.innerHTML = '';
+          return;
+        }
+
+        var maxVal = Math.max.apply(null, allDepts.map(function(d) {
+          return d.total;
+        }));
+
+        // 生成柱状图
+        var html = '';
+        for (var j = 0; j < allDepts.length; j++) {
+          var d = allDepts[j];
+          var height = maxVal > 0 ? (d.total / maxVal * 180) : 0;
+          var title = d.name + ': ' + d.total + '人';
+          
+          html += '<div class="dept-bar-group">';
+          html += '<div class="dept-bar-value">' + d.total + '</div>';
+          html += '<div class="dept-bar" style="height: ' + Math.max(height, 8) + 'px;" title="' + title + '"></div>';
+          html += '<div class="dept-bar-label">' + d.name + '</div>';
+          html += '</div>';
+        }
+
+        chartContainer.innerHTML = html;
+
+        // 生成图例
+        legendContainer.innerHTML = '<div class="dept-chart-legend-item"><span class="dept-chart-legend-dot" style="background: linear-gradient(180deg, var(--accent-primary), var(--accent-violet));"></span>师兄人数</div>';
+      }
+
+      // 更新指标卡片（模块二）
+      function updateMetrics(mentors) {
+        var total = mentors.length;
+        var certified = 0, inProgress = 0, pending = 0, failed = 0;
+        
+        for (var i = 0; i < mentors.length; i++) {
+          var status = mentors[i].certStatus;
+          if (status === '已认证') certified++;
+          else if (status === '认证中') inProgress++;
+          else if (status === '未通过') failed++;
+          else pending++;
+        }
+
+        var cards = document.querySelectorAll('.metric-card .metric-value');
+        if (cards.length >= 4) {
+          cards[0].textContent = total;
+          cards[1].textContent = certified;
+          cards[2].textContent = pending;
+          cards[3].textContent = failed;
+        }
+
+        var trend = document.querySelectorAll('.metric-card .metric-trend');
+        if (trend.length >= 2 && certified > 0) {
+          var rate = ((certified / total) * 100).toFixed(1) + '%';
+          trend[1].innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg> 通过率 ' + rate;
+        }
+      }
+
+      // 更新三级部门分布（模块二）
+      function updateDeptDistribution(mentors) {
+        var deptMap = {};
+        for (var i = 0; i < mentors.length; i++) {
+          var dept = mentors[i].dept3 || '未分配';
+          if (!deptMap[dept]) deptMap[dept] = { pending: 0, failed: 0 };
+          if (mentors[i].certStatus === '未参与') deptMap[dept].pending++;
+          else if (mentors[i].certStatus === '未通过') deptMap[dept].failed++;
+        }
+
+        var container = document.querySelector('.chart-container');
+        if (!container) return;
+
+        // 过滤掉人数为0的部门，然后排序
+        var depts = Object.keys(deptMap).filter(function(dept) {
+          return dept && dept !== 'undefined' && (deptMap[dept].pending > 0 || deptMap[dept].failed > 0);
+        }).sort(function(a, b) {
+          return (deptMap[b].pending + deptMap[b].failed) - (deptMap[a].pending + deptMap[a].failed);
+        }).slice(0, 10);
+
+        if (depts.length === 0) {
+          container.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-tertiary);">暂无数据</div>';
+          return;
+        }
+
+        var maxVal = Math.max.apply(null, depts.map(function(d) {
+          return deptMap[d].pending + deptMap[d].failed;
+        }));
+
+        var html = '';
+        for (var j = 0; j < depts.length; j++) {
+          var d = deptMap[depts[j]];
+          var total = d.pending + d.failed;
+          var height = maxVal > 0 ? (total / maxVal * 190) : 0;
+          var colorClass = total <= 3 ? '' : (total <= 6 ? 'warning' : 'danger');
+          var tooltipText = depts[j] + '：未参与' + d.pending + '人，未通过' + d.failed + '人，共' + total + '人';
+          
+          html += '<div class="chart-bar-group">';
+          html += '<div class="chart-bar ' + colorClass + '" style="height: ' + Math.max(height, 8) + 'px;" data-value="' + tooltipText + '" title="' + tooltipText + '"></div>';
+          html += '<div class="chart-bar-label">' + depts[j].substring(0, 6) + '</div>';
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+      }
+
+      // 更新提醒列表（模块二）
+      function updateReminderList(mentors) {
+        var container = document.querySelector('.reminder-list');
+        if (!container) return;
+
+        var needReminder = mentors.filter(function(d) {
+          return d.certStatus === '未通过' || d.certStatus === '未参与';
+        });
+
+        if (needReminder.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-tertiary);">暂无需要提醒的人员</div>';
+          return;
+        }
+
+        var html = '';
+        var avatarGradients = ['var(--avatar-gray)', 'var(--avatar-orange)', 'var(--avatar-blue)'];
+        
+        for (var i = 0; i < Math.min(needReminder.length, 20); i++) {
+          var d = needReminder[i];
+          var isUrgent = d.certStatus === '未通过';
+          var gradient = avatarGradients[i % avatarGradients.length];
+          
+          html += '<div class="reminder-item ' + (isUrgent ? 'urgent' : 'normal') + '">';
+          html += '<input type="checkbox" class="reminder-checkbox">';
+          html += '<div class="reminder-avatar" style="background: ' + gradient + ';">' + d.name.charAt(0) + '</div>';
+          html += '<div class="reminder-info">';
+          html += '<div class="reminder-name">' + d.name + '</div>';
+          html += '<div class="reminder-dept">' + d.dept3 + '</div>';
+          html += '</div>';
+          html += '<span class="reminder-status ' + (isUrgent ? 'failed' : 'pending') + '">' + d.certStatus + '</span>';
+          html += '</div>';
+        }
+
+        if (needReminder.length > 20) {
+          html += '<div style="text-align: center; padding: 12px; color: var(--text-tertiary); font-size: 12px;">仅显示前20条，共 ' + needReminder.length + ' 人需要提醒</div>';
+        }
+
+        container.innerHTML = html;
+      }
+
+      // 显示全局状态
+      function showGlobalStatus(msg, type) {
+        globalStatus.style.display = 'block';
+        globalStatusText.textContent = msg;
+        if (type === 'success') globalStatusText.style.color = 'var(--success)';
+        else if (type === 'error') globalStatusText.style.color = 'var(--danger)';
+        else globalStatusText.style.color = 'var(--accent-primary)';
+      }
+
+      // 清空数据 - 绑定侧边栏和抽屉内的两个按钮
+      function handleClearData() {
+        if (confirm('确定要清空所有缓存数据吗？此操作不可恢复。')) {
+          clearAllData();
+        }
+      }
+
+      if (btnClear) {
+        btnClear.addEventListener('click', handleClearData);
+      }
+      if (navClear) {
+        navClear.addEventListener('click', handleClearData);
+      }
+
+      // 导出数据按钮
+      var navExport = document.getElementById('nav-export-data');
+      if (navExport) {
+        navExport.addEventListener('click', function() {
+          var dataToExport = {
+            mentorData: mentorData,
+            whiteCollarData: whiteCollarData,
+            groupBuyData: groupBuyData,
+            submitData: submitData,
+            mergedCertData: mergedCertData,
+            exportTime: new Date().toISOString()
+          };
+          
+          var blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'data.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          showGlobalStatus('数据已导出为data.json，请上传到GitHub仓库', 'success');
+        });
+      }
+
+      // 合并认证数据按钮
+      if (btnMergeCert) {
+        btnMergeCert.addEventListener('click', mergeCertData);
+      }
+
+      // 师兄名单搜索功能
+      var btnSearch = document.getElementById('btn-search-mentor');
+      var btnFilter = document.getElementById('btn-filter-mentor');
+      var btnExport = document.getElementById('btn-export-mentor');
+      var searchInput = document.getElementById('mentor-search-input');
+      var filterSelect = document.getElementById('mentor-filter-dept');
+      var subDeptSelect = document.getElementById('mentor-filter-sub-dept');
+      var currentFilter = { search: '', dept: '', subDept: '' };
+
+      if (btnSearch) {
+        btnSearch.addEventListener('click', function() {
+          if (searchInput.style.display === 'none' || !searchInput.style.display) {
+            searchInput.style.display = 'block';
+            searchInput.focus();
+          } else {
+            // 执行搜索
+            currentFilter.search = searchInput.value.trim().toLowerCase();
+            filterMentorTable();
+          }
+        });
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            currentFilter.search = searchInput.value.trim().toLowerCase();
+            filterMentorTable();
+          }
+        });
+      }
+
+      if (btnFilter) {
+        btnFilter.addEventListener('click', function() {
+          if (filterSelect.style.display === 'none' || !filterSelect.style.display) {
+            // 填充部门选项
+            var depts = [...new Set(mentorData.map(function(m) { return m.dept2; }))].sort();
+            filterSelect.innerHTML = '<option value="">所有部门</option>';
+            depts.forEach(function(dept) {
+              var option = document.createElement('option');
+              option.value = dept;
+              option.textContent = dept;
+              filterSelect.appendChild(option);
+            });
+            filterSelect.style.display = 'block';
+            filterSelect.focus();
+          } else {
+            // 执行筛选
+            currentFilter.dept = filterSelect.value;
+            // 如果选择了直营业务中心，显示战区筛选
+            if (currentFilter.dept === '直营业务中心') {
+              var subDepts = [...new Set(mentorData.filter(function(m) { 
+                return m.dept2 === '直营业务中心'; 
+              }).map(function(m) { return m.dept3; }))].sort();
+              subDeptSelect.innerHTML = '<option value="">所有战区</option>';
+              subDepts.forEach(function(subDept) {
+                var option = document.createElement('option');
+                option.value = subDept;
+                option.textContent = subDept;
+                subDeptSelect.appendChild(option);
+              });
+              subDeptSelect.style.display = 'block';
+            } else {
+              subDeptSelect.style.display = 'none';
+              currentFilter.subDept = '';
+            }
+            filterMentorTable();
+          }
+        });
+      }
+
+      if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+          currentFilter.dept = filterSelect.value;
+          // 如果选择了直营业务中心，显示战区筛选
+          if (currentFilter.dept === '直营业务中心') {
+            var subDepts = [...new Set(mentorData.filter(function(m) { 
+              return m.dept2 === '直营业务中心'; 
+            }).map(function(m) { return m.dept3; }))].sort();
+            subDeptSelect.innerHTML = '<option value="">所有战区</option>';
+            subDepts.forEach(function(subDept) {
+              var option = document.createElement('option');
+              option.value = subDept;
+              option.textContent = subDept;
+              subDeptSelect.appendChild(option);
+            });
+            subDeptSelect.style.display = 'block';
+          } else {
+            subDeptSelect.style.display = 'none';
+            currentFilter.subDept = '';
+          }
+          filterMentorTable();
+        });
+      }
+
+      if (subDeptSelect) {
+        subDeptSelect.addEventListener('change', function() {
+          currentFilter.subDept = subDeptSelect.value;
+          filterMentorTable();
+        });
+      }
+
+      if (btnExport) {
+        btnExport.addEventListener('click', function() {
+          // 导出CSV
+          var csvContent = '姓名,工号,二级部门,三级部门,四级部门,带教徒弟总数\n';
+          var filteredData = getFilteredMentorData();
+          filteredData.forEach(function(m) {
+            csvContent += '"' + m.name + '","' + m.empId + '","' + m.dept2 + '","' + m.dept3 + '","' + m.dept4 + '",' + m.apprentice + '\n';
+          });
+          
+          var blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = '师兄名单_' + new Date().toISOString().slice(0, 10) + '.csv';
+          link.click();
+          showGlobalStatus('已导出 ' + filteredData.length + ' 条记录', 'success');
+        });
+      }
+
+      // 筛选师兄名单表格
+      function filterMentorTable() {
+        var filteredData = getFilteredMentorData();
+        updateMentorTable(filteredData);
+        
+        var countText = '显示 ' + filteredData.length + ' 条';
+        if (currentFilter.search || currentFilter.dept) {
+          countText += ' (共 ' + mentorData.length + ' 条)';
+        }
+        showGlobalStatus(countText, 'success');
+      }
+
+      function getFilteredMentorData() {
+        return mentorData.filter(function(m) {
+          var matchSearch = !currentFilter.search || 
+            m.name.toLowerCase().includes(currentFilter.search) || 
+            m.empId.toLowerCase().includes(currentFilter.search);
+          var matchDept = !currentFilter.dept || m.dept2 === currentFilter.dept;
+          var matchSubDept = !currentFilter.subDept || m.dept3 === currentFilter.subDept;
+          return matchSearch && matchDept && matchSubDept;
+        });
+      }
+
+      // 页面加载时恢复缓存数据
+      loadStoredData();
+
+      // 周报推送功能
+      var weeklyReportModal = null;
+
+      function formatDate(date) {
+        var y = date.getFullYear();
+        var m = String(date.getMonth() + 1).padStart(2, '0');
+        var d = String(date.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+      }
+
+      function generateWeeklyReport() {
+        var total = mergedCertData.length;
+        var certified = 0, inProgress = 0, pending = 0, failed = 0;
+        var failedList = [], pendingList = [];
+
+        mergedCertData.forEach(function(d) {
+          if (d.certStatus === '已认证') certified++;
+          else if (d.certStatus === '认证中') inProgress++;
+          else if (d.certStatus === '未通过') {
+            failed++;
+            failedList.push(d);
+          }
+          else {
+            pending++;
+            pendingList.push(d);
+          }
+        });
+
+        var passRate = total > 0 ? ((certified / total) * 100).toFixed(1) : 0;
+
+        // 三级部门认证进度分析
+        var deptProgress = {};
+        mergedCertData.forEach(function(d) {
+          var dept = d.dept3 || '未分配';
+          if (!deptProgress[dept]) deptProgress[dept] = { total: 0, certified: 0, failed: 0, pending: 0 };
+          deptProgress[dept].total++;
+          if (d.certStatus === '已认证') deptProgress[dept].certified++;
+          else if (d.certStatus === '未通过') deptProgress[dept].failed++;
+          else if (d.certStatus === '未参与') deptProgress[dept].pending++;
+        });
+
+        // 找出：提报人多但进度慢的部门
+        var slowDepts = [];
+        Object.keys(deptProgress).forEach(function(dept) {
+          var dp = deptProgress[dept];
+          var rate = dp.total > 0 ? (dp.certified / dp.total * 100) : 0;
+          if (dp.total >= 5 && rate < 50) {
+            slowDepts.push({ dept: dept, total: dp.total, rate: rate.toFixed(1), certified: dp.certified });
+          }
+        });
+        slowDepts.sort(function(a, b) { return a.rate - b.rate; });
+
+        // 找出：未通过集中的部门
+        var failedDepts = {};
+        failedList.forEach(function(d) {
+          var dept = d.dept3 || '未分配';
+          if (!failedDepts[dept]) failedDepts[dept] = [];
+          failedDepts[dept].push(d.name + '(' + d.empId + ')');
+        });
+
+        // 本周提报分析
+        var submitRecords = JSON.parse(localStorage.getItem('certSubmitRecords') || '[]');
+        var today = new Date();
+        var weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay() + 1);
+        weekStart.setHours(0, 0, 0, 0);
+        var weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        var thisWeekSubmits = submitRecords.filter(function(r) {
+          var t = new Date(r.submitTime);
+          return t >= weekStart && t <= weekEnd;
+        });
+
+        // 按部门统计提报
+        var submitByDept = {};
+        thisWeekSubmits.forEach(function(r) {
+          var dept = r.dept3 || '未分配';
+          if (!submitByDept[dept]) submitByDept[dept] = { count: 0, types: {} };
+          submitByDept[dept].count++;
+          submitByDept[dept].types[r.certType] = (submitByDept[dept].types[r.certType] || 0) + 1;
+        });
+
+        // 生成钉钉兼容格式（使用+符号和纯文本，确保换行）
+        var md = '';
+        
+        // 标题
+        md += '**师兄认证周报**\n\n';
+        md += '统计周期：' + formatDate(weekStart) + ' ~ ' + formatDate(weekEnd) + '\n\n';
+
+        // 核心指标
+        md += '**核心指标**\n\n';
+        md += '+ 认证总数：**' + total + '**人\n';
+        md += '+ 已认证：**' + certified + '**人（' + passRate + '%）\n';
+        md += '+ 未通过：**' + failed + '**人（' + (total > 0 ? (failed / total * 100).toFixed(1) : 0) + '%）\n';
+        md += '+ 未参与：**' + pending + '**人（' + (total > 0 ? (pending / total * 100).toFixed(1) : 0) + '%）\n\n';
+
+        // 重点关注
+        md += '**重点关注**\n\n';
+        var hasAlert = false;
+
+        // 未通过部门
+        var failedDeptKeys = Object.keys(failedDepts).sort(function(a, b) { return failedDepts[b].length - failedDepts[a].length; });
+        if (failedDeptKeys.length > 0) {
+          hasAlert = true;
+          md += '**未通过人员较多：**\n\n';
+          failedDeptKeys.slice(0, 3).forEach(function(dept) {
+            md += '+ **' + dept + '**：' + failedDepts[dept].length + '人\n';
+            failedDepts[dept].slice(0, 3).forEach(function(name) {
+              md += '  - ' + name + '\n';
+            });
+          });
+          md += '\n';
+        }
+
+        // 未参与部门
+        var pendingByDept = {};
+        pendingList.forEach(function(d) {
+          var dept = d.dept3 || '未分配';
+          if (!pendingByDept[dept]) pendingByDept[dept] = 0;
+          pendingByDept[dept]++;
+        });
+        var pendingDeptKeys = Object.keys(pendingByDept).sort(function(a, b) { return pendingByDept[b] - pendingByDept[a]; });
+        if (pendingDeptKeys.length > 0) {
+          hasAlert = true;
+          md += '**未参与人数较多：**\n\n';
+          pendingDeptKeys.slice(0, 3).forEach(function(dept) {
+            md += '+ **' + dept + '**：' + pendingByDept[dept] + '人\n';
+          });
+          md += '\n';
+        }
+
+        // 进度慢的部门
+        var deptProgress2 = {};
+        mergedCertData.forEach(function(d) {
+          var dept = d.dept3 || '未分配';
+          if (!deptProgress2[dept]) deptProgress2[dept] = { total: 0, certified: 0 };
+          deptProgress2[dept].total++;
+          if (d.certStatus === '已认证') deptProgress2[dept].certified++;
+        });
+        var slowDepts2 = [];
+        Object.keys(deptProgress2).forEach(function(dept) {
+          var dp = deptProgress2[dept];
+          var rate = dp.total > 0 ? (dp.certified / dp.total * 100) : 0;
+          if (dp.total >= 5 && rate < 50) {
+            slowDepts2.push({ dept: dept, total: dp.total, rate: rate.toFixed(1) });
+          }
+        });
+        slowDepts2.sort(function(a, b) { return a.rate - b.rate; });
+        if (slowDepts2.length > 0) {
+          hasAlert = true;
+          md += '**认证进度较慢（低于50%）：**\n\n';
+          slowDepts2.slice(0, 3).forEach(function(d) {
+            md += '+ **' + d.dept + '**：' + d.rate + '%（' + d.total + '人）\n';
+          });
+          md += '\n';
+        }
+
+        if (!hasAlert) {
+          md += '暂无需要特别关注的事项\n\n';
+        }
+
+        // 本周提报
+        md += '**本周提报**\n\n';
+        var submitRecords2 = JSON.parse(localStorage.getItem('certSubmitRecords') || '[]');
+        var today2 = new Date();
+        var weekStart2 = new Date(today2);
+        weekStart2.setDate(today2.getDate() - today2.getDay() + 1);
+        weekStart2.setHours(0, 0, 0, 0);
+        var weekEnd2 = new Date(weekStart2);
+        weekEnd2.setDate(weekStart2.getDate() + 6);
+        weekEnd2.setHours(23, 59, 59, 999);
+        var thisWeekSubmits2 = submitRecords2.filter(function(r) {
+          var t = new Date(r.submitTime);
+          return t >= weekStart2 && t <= weekEnd2;
+        });
+        if (thisWeekSubmits2.length === 0) {
+          md += '本周暂无提报记录\n\n';
+        } else {
+          md += '本周共提报 **' + thisWeekSubmits2.length + '**人\n\n';
+          var submitByDept2 = {};
+          thisWeekSubmits2.forEach(function(r) {
+            var dept = r.dept3 || '未分配';
+            if (!submitByDept2[dept]) submitByDept2[dept] = { count: 0, types: {} };
+            submitByDept2[dept].count++;
+            submitByDept2[dept].types[r.certType] = (submitByDept2[dept].types[r.certType] || 0) + 1;
+          });
+          var deptKeys2 = Object.keys(submitByDept2).sort(function(a, b) { return submitByDept2[b].count - submitByDept2[a].count; });
+          deptKeys2.forEach(function(dept) {
+            var d = submitByDept2[dept];
+            var typeStr = Object.keys(d.types).map(function(t) { return t + ' ' + d.types[t] + '人'; }).join('、');
+            md += '+ **' + dept + '**：' + d.count + '人（' + typeStr + '）\n';
+          });
+          md += '\n';
+        }
+
+        md += '> 数据来源：师兄认证管理看板';
+
+        return {
+          markdown: md,
+          title: '师兄认证周报（' + formatDate(weekStart) + ' - ' + formatDate(weekEnd) + '）'
+        };
+      }
+
+      function showWeeklyReportModal() {
+        var report = generateWeeklyReport();
+
+        // 钉钉Webhook配置
+        var webhookToken = '9d8414c09afa932ce25324a6098ff33f4cb81726f051f43bbf266620f7500ce0';
+        var webhookUrl = 'https://oapi.dingtalk.com/robot/send?access_token=' + webhookToken;
+
+        // 创建弹窗
+        var modal = document.createElement('div');
+        modal.id = 'weekly-report-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+        // 构建curl命令
+        var markdownText = report.markdown.replace(/\n/g, '\\n').replace(/"/g, '\\"');
+        var curlCmd = 'curl -s -X POST "' + webhookUrl + '" -H "Content-Type: application/json" -d \'{"msgtype":"markdown","markdown":{"title":"' + report.title + '","text":"' + markdownText + '"}}\'';
+
+        modal.innerHTML = '<div style="background:white;border-radius:16px;padding:32px;max-width:650px;width:90%;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">' +
+          '<h3 style="margin:0 0 20px 0;font-size:20px;font-weight:700;color:#1a1d23;">师兄认证周报</h3>' +
+          '<pre style="background:#f7f8f8;padding:16px;border-radius:8px;font-size:13px;white-space:pre-wrap;max-height:200px;overflow:auto;color:#4a5063;font-family:monospace;line-height:1.6;">' + report.markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>' +
+          '<div style="margin-top:20px;">' +
+          '<button id="btn-push-dingtalk" style="width:100%;padding:14px;margin-bottom:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>' +
+          '一键推送（复制命令）</button>' +
+          '<button id="btn-copy-dws" style="width:100%;padding:12px;margin-bottom:10px;background:#f7f8f8;color:#4a5063;border:1px solid #d8dce6;border-radius:8px;cursor:pointer;font-size:14px;">复制dws群消息推送命令</button>' +
+          '<button id="btn-close-modal" style="width:100%;padding:10px;background:white;color:#7a8199;border:1px solid #d8dce6;border-radius:8px;cursor:pointer;font-size:13px;">关闭</button>' +
+          '</div>' +
+          '</div>';
+
+        document.body.appendChild(modal);
+
+        // 绑定一键推送按钮
+        document.getElementById('btn-push-dingtalk').addEventListener('click', function() {
+          var btn = this;
+          
+          navigator.clipboard.writeText(curlCmd).then(function() {
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><polyline points="20 6 9 17 4 12"></polyline></svg> 命令已复制！';
+            btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            
+            // 显示提示
+            setTimeout(function() {
+              alert('推送命令已复制到剪贴板！\n\n请在终端粘贴并回车执行即可完成推送。');
+              document.body.removeChild(modal);
+            }, 500);
+          }).catch(function() {
+            alert('复制失败，请手动复制以下命令：\n\n' + curlCmd);
+          });
+        });
+
+        // 绑定复制dws命令按钮
+        var groupId = 'cid6XSSfubRzrIvdNVzEOrW8Q==';
+        var cmd2 = 'dws chat message send --group ' + groupId + ' --title "' + report.title + '" --text "' + report.markdown.replace(/\n/g, '\\n').replace(/"/g, '\\"') + '"';
+        
+        document.getElementById('btn-copy-dws').addEventListener('click', function() {
+          navigator.clipboard.writeText(cmd2).then(function() {
+            var btn = this;
+            btn.textContent = '已复制！';
+            setTimeout(function() {
+              btn.textContent = '复制dws群消息推送命令';
+            }, 2000);
+          });
+        });
+
+        // 绑定重置token按钮
+        document.getElementById('btn-reset-token').addEventListener('click', function() {
+          if (confirm('确认重置Webhook Token？下次推送时需要重新输入。')) {
+            localStorage.removeItem('dingtalkWebhookToken');
+            document.body.removeChild(modal);
+            alert('Token已清除');
+          }
+        });
+
+        // 绑定关闭按钮
+        document.getElementById('btn-close-modal').addEventListener('click', function() {
+          document.body.removeChild(modal);
+        });
+
+        // 点击背景关闭
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+          }
+        });
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+          alert('已复制到剪贴板！请在终端执行该命令');
+        });
+      }
+
+      // 绑定周报按钮
+      document.getElementById('btn-weekly-report').addEventListener('click', showWeeklyReportModal);
+    })();
+
+
+    // ========== 认证提报表单功能 ==========
+    var submitRecords = JSON.parse(localStorage.getItem('certSubmitRecords') || '[]');
+    
+    // 初始化统计
+    updateSubmitStats();
+    
+    // 表单提交
+    document.getElementById('cert-submit-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      var record = {
+        empId: document.getElementById('form-empId').value.trim(),
+        name: document.getElementById('form-name').value.trim(),
+        dept3: document.getElementById('form-dept3').value.trim(),
+        dept4: document.getElementById('form-dept4').value.trim() || '-',
+        dept5: document.getElementById('form-dept5').value.trim() || '-',
+        certType: document.getElementById('form-certType').value,
+        submitTime: new Date().toLocaleString('zh-CN')
+      };
+      
+      // 验证必填项
+      if (!record.empId || !record.name || !record.dept3 || !record.certType) {
+        alert('请填写所有必填项');
+        return;
+      }
+      
+      // 保存到本地存储
+      submitRecords.unshift(record);
+      localStorage.setItem('certSubmitRecords', JSON.stringify(submitRecords));
+      
+      // 更新统计
+      updateSubmitStats();
+      
+      // 重置表单
+      this.reset();
+      
+      // 提示成功
+      alert('提报成功！\n\n工号：' + record.empId + '\n姓名：' + record.name + '\n认证类型：' + record.certType);
+    });
+    
+    // 重置表单
+    function resetForm() {
+      document.getElementById('cert-submit-form').reset();
+    }
+    
+    // 更新提报统计
+    function updateSubmitStats() {
+      var total = submitRecords.length;
+      var whiteCollar = submitRecords.filter(function(r) { return r.certType === '白领&CCA'; }).length;
+      var groupBuy = submitRecords.filter(function(r) { return r.certType === '爆品团'; }).length;
+      
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-white-collar').textContent = whiteCollar;
+      document.getElementById('stat-group-buy').textContent = groupBuy;
+      
+      // 更新最近提报记录
+      var recentContainer = document.getElementById('recent-submits');
+      if (submitRecords.length === 0) {
+        recentContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-tertiary); font-size: 13px;">暂无提报记录</div>';
+      } else {
+        var html = '';
+        submitRecords.slice(0, 10).forEach(function(r) {
+          var typeColor = r.certType === '白领&CCA' ? 'var(--accent-primary)' : 'var(--warning)';
+          html += '<div style="padding: 10px; background: var(--bg-surface); border-radius: var(--radius-sm); margin-bottom: 8px; border-left: 3px solid ' + typeColor + ';">';
+          html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+          html += '<span style="font-weight: 600; font-size: 13px;">' + r.name + '</span>';
+          html += '<span style="font-size: 11px; color: var(--text-tertiary);">' + r.submitTime + '</span>';
+          html += '</div>';
+          html += '<div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">';
+          html += r.empId + ' · ' + r.dept3 + ' · <span style="color: ' + typeColor + ';">' + r.certType + '</span>';
+          html += '</div>';
+          html += '</div>';
+        });
+        recentContainer.innerHTML = html;
+      }
+    }
+    
+    // 下载提报数据为Excel
+    function downloadSubmitData() {
+      var records = JSON.parse(localStorage.getItem('certSubmitRecords') || '[]');
+      
+      if (records.length === 0) {
+        alert('暂无提报数据可下载');
+        return;
+      }
+      
+      // 构建Excel数据
+      var excelData = records.map(function(r) {
+        return {
+          '工号': r.empId,
+          '姓名': r.name,
+          '三级部门': r.dept3,
+          '四级部门': r.dept4,
+          '五级部门': r.dept5,
+          '认证类型': r.certType,
+          '提报时间': r.submitTime
+        };
+      });
+      
+      // 使用SheetJS生成Excel
+      var ws = XLSX.utils.json_to_sheet(excelData);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '提报数据');
+      
+      // 设置列宽
+      ws['!cols'] = [
+        { wch: 12 },  // 工号
+        { wch: 12 },  // 姓名
+        { wch: 15 },  // 三级部门
+        { wch: 15 },  // 四级部门
+        { wch: 15 },  // 五级部门
+        { wch: 12 },  // 认证类型
+        { wch: 20 }   // 提报时间
+      ];
+      
+      // 生成文件名
+      var now = new Date();
+      var fileName = '师兄认证提报数据_' + now.getFullYear() + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getDate()).padStart(2, '0') + '.xlsx';
+      
+      // 下载
+      XLSX.writeFile(wb, fileName);
+    }
+
+  </script>
+</body>
+</html>

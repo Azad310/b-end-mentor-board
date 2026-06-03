@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-19T02:58:42.180Z",
+  "execution": {
+    "status": "ready_to_present",
+    "lastLintCheckedAt": "2026-05-19T02:58:07.871Z",
+    "lastLintSummary": {
+      "p0": 0,
+      "p1": 1,
+      "p2": 0,
+      "fileCount": 1,
+      "checkedAt": "2026-05-19T02:58:07.871Z"
+    },
+    "tweaksStatus": "provided",
+    "tweaksCount": 4,
+    "nudgeControlSummary": {
+      "total": 4,
+      "color": 0,
+      "nonColor": 4,
+      "slider": 2,
+      "select": 1,
+      "lightTheme": 0,
+      "darkTheme": 0
+    },
+    "noNonColorNudgesReason": "Nudges包含了Appearance预设（暗色专业/暗色高对比/明亮清爽）、图表强调色选择、圆角大小和间距密度控制，覆盖了外观、颜色、圆角和间距四个维度的关键设计决策。",
+    "noThemeNudgesReason": "Appearance预设Nudge已包含Light和Dark选项（明亮清爽和暗色专业），满足基线主题切换需求。",
+    "buildStatus": "not_applicable",
+    "noBuildReason": "这是静态HTML单文件，不包含React/Vite构建流程，无需构建步骤。",
+    "completedAt": "2026-05-19T02:58:42.179Z"
+  },
+  "designPlan": {
+    "status": "cancelled",
+    "cancelledAt": "2026-05-19T02:47:31.923Z",
+    "directExecutionRequested": true,
+    "directExecutionReason": "直接执行",
+    "directExecutionAt": "2026-05-19T02:47:31.923Z"
+  }
+}

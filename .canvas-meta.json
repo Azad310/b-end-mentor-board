@@ -1,0 +1,130 @@
+{
+  "designSystemApproved": false,
+  "activePage": "index.html",
+  "version": 1,
+  "createdAt": "2026-05-19T02:47:15.512Z",
+  "updatedAt": "2026-06-03T02:24:04.598Z",
+  "frames": [
+    {
+      "id": "index",
+      "kind": "html-file",
+      "title": "Main Canvas",
+      "fileName": "index.html",
+      "x": 645.9021038835142,
+      "y": -5.277729011024377,
+      "width": 1468.0981319683788,
+      "height": 900,
+      "lockedAspectRatio": false,
+      "lockedSize": false,
+      "status": "active",
+      "createdAt": "2026-05-19T02:54:26.291Z",
+      "updatedAt": "2026-05-20T08:45:28.483Z"
+    }
+  ],
+  "activeFrameId": "index",
+  "tweaks": [
+    {
+      "control": "preset",
+      "label": "外观主题",
+      "presetOptions": [
+        {
+          "label": "暗色专业",
+          "patches": [
+            {
+              "value": "#08090a",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#0f1011",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#f7f8f8",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#5e6ad2",
+              "variable": "--seed-primary"
+            }
+          ]
+        },
+        {
+          "label": "暗色高对比",
+          "patches": [
+            {
+              "value": "#010102",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#191a1b",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#ffffff",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#7170ff",
+              "variable": "--seed-primary"
+            }
+          ]
+        },
+        {
+          "label": "明亮清爽",
+          "patches": [
+            {
+              "value": "#f7f8f8",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#ffffff",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#08090a",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#5e6ad2",
+              "variable": "--seed-primary"
+            }
+          ]
+        }
+      ],
+      "value": "dark-professional",
+      "variable": "--appearance-preset"
+    },
+    {
+      "control": "select",
+      "label": "图表强调色",
+      "options": [
+        "#5e6ad2",
+        "#7170ff",
+        "#27a644",
+        "#f59e0b"
+      ],
+      "value": "#5e6ad2",
+      "variable": "--accent-primary"
+    },
+    {
+      "control": "slider",
+      "label": "圆角大小",
+      "max": 16,
+      "min": 0,
+      "step": 1,
+      "unit": "px",
+      "value": "8px",
+      "variable": "--radius-lg"
+    },
+    {
+      "control": "slider",
+      "label": "间距密度",
+      "max": 32,
+      "min": 8,
+      "step": 4,
+      "unit": "px",
+      "value": "16px",
+      "variable": "--spacing-base"
+    }
+  ]
+}

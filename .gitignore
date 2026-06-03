@@ -1,0 +1,33 @@
+# 临时文件
+.vite/
+uploads/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器配置
+.vscode/
+.idea/
+
+# 旧的数据文件（AI表格原始数据）
+data-mentors.json
+data-white-collar.json
+data-group-buy.json
+data-cert.json
+data-export.json
+
+# 服务器脚本（不需要部署）
+server.js
+push-server.*
+generateWeeklyReport.js
+push-weekly-report.js
+push-weekly.sh
+send-weekly-report.py
+test-submit.js
+weekly-report.md
+
+# 文档
+AI表格数据对接方案.md
+*.cmd
