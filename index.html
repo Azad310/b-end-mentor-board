@@ -3057,7 +3057,7 @@
 
       // 页面加载时恢复数据
       async function loadStoredData() {
-        // 优先尝试从服务器加载数据文件
+        // 优先尝试从服务器加载完整数据（包含个人信息，但只有授权人员能导出）
         try {
           var response = await fetch('./data.json');
           if (response.ok) {
@@ -3077,13 +3077,25 @@
               files.mentor.status.textContent = '已加载服务器数据: ' + mentorData.length + '条';
               files.mentor.area.classList.add('uploaded');
             }
+            if (whiteCollarData.length > 0) {
+              files['white-collar'].status.textContent = '已加载服务器数据: ' + whiteCollarData.length + '条';
+              files['white-collar'].area.classList.add('uploaded');
+            }
+            if (groupBuyData.length > 0) {
+              files['group-buy'].status.textContent = '已加载服务器数据: ' + groupBuyData.length + '条';
+              files['group-buy'].area.classList.add('uploaded');
+            }
+            if (submitData.length > 0) {
+              files.submit.status.textContent = '已加载服务器数据: ' + submitData.length + '条';
+              files.submit.area.classList.add('uploaded');
+            }
             if (mergedCertData.length > 0) {
               updateCertDashboard(mergedCertData);
               updateDeptDistribution(mergedCertData);
               updateReminderList(mergedCertData);
             }
-            console.log('已从服务器加载数据');
-            return; // 服务器数据加载成功，跳过localStorage
+            console.log('已从服务器加载完整数据');
+            return;
           }
         } catch (e) {
           console.log('服务器数据文件不存在，尝试localStorage');
@@ -3986,10 +3998,30 @@
         navClear.addEventListener('click', handleClearData);
       }
 
-      // 导出数据按钮
+      // 导出数据按钮（需要权限）
       var navExport = document.getElementById('nav-export-data');
       if (navExport) {
         navExport.addEventListener('click', function() {
+          // 检查是否有导出权限
+          var perms = JSON.parse(localStorage.getItem('downloadPermissions') || '{"mentor":true,"cert":true,"submit":true}');
+          var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+          var currentUser = localStorage.getItem('currentUserName') || '';
+          
+          // 如果是管理员（第一个导入数据的人），直接允许
+          var isAdmin = users.length === 0 || currentUser === '';
+          
+          if (!isAdmin) {
+            // 检查是否在授权名单中
+            var hasPermission = users.some(function(u) { 
+              return u.name === currentUser; 
+            });
+            
+            if (!hasPermission) {
+              alert('你没有导出权限，请联系管理员授权。');
+              return;
+            }
+          }
+          
           var dataToExport = {
             mentorData: mentorData,
             whiteCollarData: whiteCollarData,
