@@ -3057,36 +3057,66 @@
 
       // 页面加载时恢复数据
       async function loadStoredData() {
-        // 优先尝试从服务器加载数据文件
+        // 优先尝试从服务器加载统计数据（脱敏数据，不含个人信息）
         try {
-          var response = await fetch('./data.json');
+          var response = await fetch('./stats.json');
           if (response.ok) {
-            var serverData = await response.json();
-            mentorData = serverData.mentorData || [];
-            whiteCollarData = serverData.whiteCollarData || [];
-            groupBuyData = serverData.groupBuyData || [];
-            submitData = serverData.submitData || [];
-            mergedCertData = serverData.mergedCertData || [];
-
-            // 更新UI
-            if (mentorData.length > 0) {
+            var statsData = await response.json();
+            
+            // 从统计数据恢复UI
+            if (statsData.mentorCount > 0) {
+              // 从部门分布数据重建mentorData结构（仅用于展示）
+              mentorData = [];
+              Object.keys(statsData.dept2Distribution).forEach(function(dept) {
+                for (var i = 0; i < statsData.dept2Distribution[dept]; i++) {
+                  mentorData.push({
+                    name: '',
+                    empId: '',
+                    dept2: dept,
+                    dept3: '',
+                    dept4: '',
+                    apprenticeCount: 0
+                  });
+                }
+              });
+              
               updateMentorTable(mentorData);
               updateDeptAnalysis(mentorData);
               updateDirectDeptAnalysis(mentorData);
               updateFY27Stats(mentorData);
-              files.mentor.status.textContent = '已加载服务器数据: ' + mentorData.length + '条';
+              files.mentor.status.textContent = '已加载统计数据（脱敏）';
               files.mentor.area.classList.add('uploaded');
             }
-            if (mergedCertData.length > 0) {
+            
+            if (statsData.certStats.total > 0) {
+              // 从认证统计重建mergedCertData
+              mergedCertData = [];
+              Object.keys(statsData.dept3CertStats).forEach(function(dept) {
+                var deptStats = statsData.dept3CertStats[dept];
+                for (var i = 0; i < deptStats.passed; i++) {
+                  mergedCertData.push({ dept3: dept, certStatus: '已通过', name: '', empId: '' });
+                }
+                for (var i = 0; i < deptStats.pending; i++) {
+                  mergedCertData.push({ dept3: dept, certStatus: '进行中', name: '', empId: '' });
+                }
+                for (var i = 0; i < deptStats.failed; i++) {
+                  mergedCertData.push({ dept3: dept, certStatus: '未通过', name: '', empId: '' });
+                }
+                for (var i = 0; i < deptStats.notStarted; i++) {
+                  mergedCertData.push({ dept3: dept, certStatus: '未参与', name: '', empId: '' });
+                }
+              });
+              
               updateCertDashboard(mergedCertData);
               updateDeptDistribution(mergedCertData);
               updateReminderList(mergedCertData);
             }
-            console.log('已从服务器加载数据');
-            return; // 服务器数据加载成功，跳过localStorage
+            
+            console.log('已从服务器加载统计数据（脱敏）');
+            return;
           }
         } catch (e) {
-          console.log('服务器数据文件不存在，尝试localStorage');
+          console.log('服务器统计数据不存在，尝试localStorage');
         }
 
         // 如果服务器数据加载失败，尝试localStorage
@@ -3986,30 +4016,79 @@
         navClear.addEventListener('click', handleClearData);
       }
 
-      // 导出数据按钮
+      // 导出统计数据按钮（脱敏，不含个人信息）
       var navExport = document.getElementById('nav-export-data');
       if (navExport) {
         navExport.addEventListener('click', function() {
-          var dataToExport = {
-            mentorData: mentorData,
-            whiteCollarData: whiteCollarData,
-            groupBuyData: groupBuyData,
-            submitData: submitData,
-            mergedCertData: mergedCertData,
-            exportTime: new Date().toISOString()
+          // 生成脱敏统计数据
+          var statsData = {
+            exportTime: new Date().toISOString(),
+            mentorCount: mentorData.length,
+            dept2Distribution: {},
+            dept3Distribution: {},
+            directDeptDistribution: {},
+            certStats: {
+              total: mergedCertData.length,
+              passed: 0,
+              pending: 0,
+              failed: 0,
+              notStarted: 0
+            },
+            dept3CertStats: {}
           };
           
-          var blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+          // 二级部门分布
+          mentorData.forEach(function(m) {
+            var dept = m.dept2 || '未分配';
+            statsData.dept2Distribution[dept] = (statsData.dept2Distribution[dept] || 0) + 1;
+          });
+          
+          // 三级部门分布
+          mentorData.forEach(function(m) {
+            var dept = m.dept3 || '未分配';
+            statsData.dept3Distribution[dept] = (statsData.dept3Distribution[dept] || 0) + 1;
+          });
+          
+          // 直营业务中心分布
+          mentorData.forEach(function(m) {
+            if (m.dept2 && m.dept2.includes('直营') && m.dept2.includes('业务')) {
+              var dept = m.dept3 || '未分配';
+              statsData.directDeptDistribution[dept] = (statsData.directDeptDistribution[dept] || 0) + 1;
+            }
+          });
+          
+          // 认证状态统计
+          mergedCertData.forEach(function(c) {
+            if (c.certStatus === '已通过' || c.certStatus === '已认证') statsData.certStats.passed++;
+            else if (c.certStatus === '进行中' || c.certStatus === '认证中') statsData.certStats.pending++;
+            else if (c.certStatus === '未通过' || c.certStatus === '失败') statsData.certStats.failed++;
+            else statsData.certStats.notStarted++;
+          });
+          
+          // 三级部门认证状态统计
+          mergedCertData.forEach(function(c) {
+            var dept = c.dept3 || '未分配';
+            if (!statsData.dept3CertStats[dept]) {
+              statsData.dept3CertStats[dept] = { total: 0, passed: 0, pending: 0, failed: 0, notStarted: 0 };
+            }
+            statsData.dept3CertStats[dept].total++;
+            if (c.certStatus === '已通过' || c.certStatus === '已认证') statsData.dept3CertStats[dept].passed++;
+            else if (c.certStatus === '进行中' || c.certStatus === '认证中') statsData.dept3CertStats[dept].pending++;
+            else if (c.certStatus === '未通过' || c.certStatus === '失败') statsData.dept3CertStats[dept].failed++;
+            else statsData.dept3CertStats[dept].notStarted++;
+          });
+          
+          var blob = new Blob([JSON.stringify(statsData, null, 2)], { type: 'application/json' });
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
-          a.download = 'data.json';
+          a.download = 'stats.json';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           
-          showGlobalStatus('数据已导出为data.json，请上传到GitHub仓库', 'success');
+          showGlobalStatus('统计数据已导出为stats.json（不含个人信息），请上传到GitHub仓库', 'success');
         });
       }
 
