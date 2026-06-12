@@ -3372,6 +3372,7 @@
           else if (h.includes('提报') || h.includes('申请')) colMap.submitted = i;
           else if (h.includes('徒弟工号') || (h.includes('徒弟') && h.includes('工号'))) colMap.apprenticeEmpId = i;
           else if (h.includes('学习进度') || h.includes('活动进度') || h.includes('进度')) colMap.learnProgress = i;
+          else if (h.includes('是否在职') || h.includes('在职') || h.includes('active') || h.includes('任职状态')) colMap.isActive = i;
         }
 
         // 默认列（根据实际Excel结构调整）
@@ -3400,6 +3401,13 @@
             var row = rows[i];
             if (!row[colMap.name]) continue;
 
+            // 解析是否在职字段
+            var isActive = true;
+            if (colMap.isActive !== undefined && row[colMap.isActive]) {
+              var activeStr = String(row[colMap.isActive]).trim().toLowerCase();
+              isActive = !(activeStr === '否' || activeStr === 'no' || activeStr === '离职' || activeStr === 'inactive');
+            }
+
             result.push({
               name: row[colMap.name] || '',
               empId: String(row[colMap.empId] || '').trim(),
@@ -3412,7 +3420,8 @@
               startDate: colMap.startDate !== undefined ? parseDate(row[colMap.startDate]) : null,
               endDate: colMap.endDate !== undefined ? parseDate(row[colMap.endDate]) : null,
               certType: row[colMap.certType] || '',
-              submitted: true
+              submitted: true,
+              isActive: isActive
             });
           }
           return result;
@@ -3538,7 +3547,8 @@
                 startDate: d.startDate,
                 endDate: d.endDate,
                 certType: d.certType || '白领&CCA',
-                rawEmpId: d.empId
+                rawEmpId: d.empId,
+                isActive: d.isActive !== undefined ? d.isActive : true
               };
               whiteCollarMatchCount++;
             }
@@ -3559,7 +3569,8 @@
                 startDate: d.startDate,
                 endDate: d.endDate,
                 certType: d.certType || '爆品团',
-                rawEmpId: d.empId
+                rawEmpId: d.empId,
+                isActive: d.isActive !== undefined ? d.isActive : true
               };
               groupBuyMatchCount++;
             }
@@ -3648,7 +3659,9 @@
             apprentice: d.apprentice,
             certStatus: finalStatus,
             learnProgress: finalLearnProgress,
-            certType: ['提报'].concat(sourcesList).join('+')
+            certType: ['提报'].concat(sourcesList).join('+'),
+            isActive: d.isActive !== undefined ? d.isActive : true,
+            isResigned: d.isActive === false ? '【已离职】' : ''
           };
         });
 
@@ -4038,7 +4051,7 @@
           html += '<input type="checkbox" class="reminder-checkbox">';
           html += '<div class="reminder-avatar" style="background: ' + gradient + ';">' + d.name.charAt(0) + '</div>';
           html += '<div class="reminder-info">';
-          html += '<div class="reminder-name">' + d.name + '</div>';
+          html += '<div class="reminder-name">' + d.name + (d.isResigned ? ' <span style="color: var(--danger); font-size: 11px; font-weight: 500;">' + d.isResigned + '</span>' : '') + '</div>';
           html += '<div class="reminder-dept">' + d.dept3 + '</div>';
           html += '</div>';
           html += '<span class="reminder-status ' + (isUrgent ? 'failed' : 'pending') + '">' + d.certStatus + '</span>';
