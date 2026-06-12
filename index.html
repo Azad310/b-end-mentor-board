@@ -1896,8 +1896,8 @@
             <div class="card-header">
               <h3 class="card-title" contenteditable="true" spellcheck="false">二级部门分布</h3>
               <div class="card-actions">
-                <button class="card-action-btn">刷新</button>
-                <button class="card-action-btn">导出</button>
+                <button class="card-action-btn" id="btn-refresh-dept">刷新</button>
+                <button class="card-action-btn" id="btn-export-dept">导出</button>
               </div>
             </div>
             <div class="dept-chart-container">
@@ -1915,8 +1915,8 @@
             <div class="card-header">
               <h3 class="card-title" contenteditable="true" spellcheck="false">直营业务中心分布</h3>
               <div class="card-actions">
-                <button class="card-action-btn">刷新</button>
-                <button class="card-action-btn">导出</button>
+                <button class="card-action-btn" id="btn-refresh-direct-dept">刷新</button>
+                <button class="card-action-btn" id="btn-export-direct-dept">导出</button>
               </div>
             </div>
             <div class="dept-chart-container">
@@ -3111,15 +3111,16 @@
             updateReminderList(mergedCertData);
           }
           
-          // 分享版本隐藏导入按钮
+          // 分享版本隐藏管理按钮
           var importBtn = document.getElementById('nav-import-data');
           if (importBtn) importBtn.style.display = 'none';
           var clearBtn = document.getElementById('nav-clear-data');
           if (clearBtn) clearBtn.style.display = 'none';
-          var exportBtn = document.getElementById('nav-export-data');
-          if (exportBtn) exportBtn.style.display = 'none';
           var generateShareBtn = document.getElementById('nav-generate-share');
           if (generateShareBtn) generateShareBtn.style.display = 'none';
+          // 导出数据按钮先隐藏，等用户输入姓名后再根据权限决定是否显示
+          var exportBtn = document.getElementById('nav-export-data');
+          if (exportBtn) exportBtn.style.display = 'none';
           
           console.log('已加载分享版本数据（生成时间: ' + SHARED_DATA.generatedAt + '）');
           
@@ -3130,6 +3131,14 @@
               var userName = prompt('欢迎使用师兄认证看板！\n请输入你的姓名（用于导出权限验证）：');
               if (userName) {
                 localStorage.setItem('currentUserName', userName.trim());
+                savedName = userName.trim();
+              }
+            }
+            // 根据权限决定是否显示导出数据按钮
+            if (exportBtn && savedName) {
+              var downloadUsers = SHARED_DATA.downloadUsers || [];
+              if (downloadUsers.length === 0 || downloadUsers.indexOf(savedName) !== -1) {
+                exportBtn.style.display = 'block';
               }
             }
           }, 500);
@@ -4412,6 +4421,108 @@
 
       // 页面加载时恢复缓存数据
       loadStoredData();
+
+      // 二级部门分布导出按钮
+      var btnExportDept = document.getElementById('btn-export-dept');
+      if (btnExportDept) {
+        btnExportDept.addEventListener('click', function() {
+          exportDeptChart('dept-chart', 'dept-chart-legend', '二级部门分布');
+        });
+      }
+
+      // 直营业务中心分布导出按钮
+      var btnExportDirectDept = document.getElementById('btn-export-direct-dept');
+      if (btnExportDirectDept) {
+        btnExportDirectDept.addEventListener('click', function() {
+          exportDeptChart('direct-dept-chart', 'direct-dept-chart-legend', '直营业务中心分布');
+        });
+      }
+
+      // 导出部门分布图表为 PNG
+      function exportDeptChart(chartId, legendId, title) {
+        var chartEl = document.getElementById(chartId);
+        if (!chartEl) {
+          alert('图表未加载，无法导出');
+          return;
+        }
+        
+        // 创建 canvas
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 500;
+        
+        // 绘制背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 绘制标题
+        ctx.fillStyle = '#1a1d23';
+        ctx.font = 'bold 20px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, canvas.width / 2, 40);
+        
+        // 获取柱子数据
+        var bars = chartEl.querySelectorAll('.dept-bar-group');
+        if (bars.length === 0) {
+          alert('图表数据为空，无法导出');
+          return;
+        }
+        
+        // 绘制柱子
+        var barWidth = 60;
+        var gap = (canvas.width - 100) / bars.length;
+        var maxVal = 0;
+        
+        bars.forEach(function(bar) {
+          var valEl = bar.querySelector('.dept-bar-value');
+          if (valEl) {
+            var val = parseInt(valEl.textContent);
+            if (val > maxVal) maxVal = val;
+          }
+        });
+        
+        bars.forEach(function(bar, i) {
+          var valEl = bar.querySelector('.dept-bar-value');
+          var labelEl = bar.querySelector('.dept-bar-label');
+          if (!valEl || !labelEl) return;
+          
+          var val = parseInt(valEl.textContent);
+          var label = labelEl.textContent;
+          var barHeight = (val / maxVal) * 300;
+          var x = 50 + i * gap;
+          var y = 450 - barHeight;
+          
+          // 绘制柱子
+          var gradient = ctx.createLinearGradient(0, y, 0, 450);
+          gradient.addColorStop(0, '#6366f1');
+          gradient.addColorStop(1, '#8b5cf6');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x, y, barWidth, barHeight);
+          
+          // 绘制数值
+          ctx.fillStyle = '#1a1d23';
+          ctx.font = 'bold 14px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(val, x + barWidth / 2, y - 10);
+          
+          // 绘制标签
+          ctx.fillStyle = '#7a8199';
+          ctx.font = '12px Inter, sans-serif';
+          ctx.save();
+          ctx.translate(x + barWidth / 2, 470);
+          ctx.rotate(-0.3);
+          ctx.textAlign = 'right';
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        });
+        
+        // 下载
+        var link = document.createElement('a');
+        link.download = title + '_' + new Date().toISOString().slice(0, 10) + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
 
       // 重新绑定数据导入面板事件（确保在loadStoredData之后）
       var importDrawer2 = document.getElementById('import-drawer');
