@@ -2149,7 +2149,7 @@
             <div class="card-header">
               <h3 class="card-title" contenteditable="true" spellcheck="false">三级部门未参与+未通过分布</h3>
               <div class="card-actions">
-                <button class="card-action-btn">下载数据</button>
+                <button class="card-action-btn" id="btn-download-cert-data">下载数据</button>
               </div>
             </div>
             <div class="chart-container">
@@ -2936,7 +2936,7 @@
       if (!listEl) return;
 
       var html = '';
-      pendingList.slice(0, 20).forEach(function(d) {
+      pendingList.forEach(function(d) {
         var statusClass = (d.certStatus === '未通过' || d.certStatus === '未合格') ? 'status-failed' : 'status-pending';
         var statusText = (d.certStatus === '未通过' || d.certStatus === '未合格') ? '未通过' : '未参与';
         var isResigned = d.isActive === false;
@@ -4044,7 +4044,7 @@
         var html = '';
         var avatarGradients = ['var(--avatar-gray)', 'var(--avatar-orange)', 'var(--avatar-blue)'];
         
-        for (var i = 0; i < Math.min(needReminder.length, 20); i++) {
+        for (var i = 0; i < needReminder.length; i++) {
           var d = needReminder[i];
           var isUrgent = d.certStatus === '未通过';
           var gradient = avatarGradients[i % avatarGradients.length];
@@ -4060,9 +4060,6 @@
           html += '</div>';
         }
 
-        if (needReminder.length > 20) {
-          html += '<div style="text-align: center; padding: 12px; color: var(--text-tertiary); font-size: 12px;">仅显示前20条，共 ' + needReminder.length + ' 人需要提醒</div>';
-        }
 
         container.innerHTML = html;
       }
@@ -4184,6 +4181,83 @@
           URL.revokeObjectURL(url);
           
           showGlobalStatus('分享版本已生成！将此文件发给同事即可查看。只有授权人员可导出数据。', 'success');
+        });
+      }
+
+      // 下载认证数据按钮
+      var btnDownloadCertData = document.getElementById('btn-download-cert-data');
+      if (btnDownloadCertData) {
+        btnDownloadCertData.addEventListener('click', function() {
+          if (mergedCertData.length === 0) {
+            alert('暂无认证数据可下载');
+            return;
+          }
+          
+          // 检查是否有导出权限
+          var users = [];
+          var isAdmin = false;
+          
+          if (typeof SHARED_DATA !== 'undefined') {
+            users = SHARED_DATA.downloadUsers || [];
+          } else {
+            users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+            var currentUser = localStorage.getItem('currentUserName') || '';
+            isAdmin = users.length === 0 || currentUser === '';
+          }
+          
+          if (!isAdmin) {
+            var hasPermission = users.some(function(u) { 
+              return u.name === (localStorage.getItem('currentUserName') || ''); 
+            });
+            
+            if (!hasPermission) {
+              alert('你没有导出权限，请联系管理员授权。\n\n管理员可以在"下载权限"中添加你的姓名。');
+              return;
+            }
+          }
+          
+          // 构建Excel数据
+          var excelData = mergedCertData.map(function(d) {
+            return {
+              '姓名': d.name,
+              '工号': d.empId,
+              '二级部门': d.dept2,
+              '三级部门': d.dept3,
+              '四级部门': d.dept4,
+              '认证状态': d.certStatus,
+              '学习进度': d.learnProgress || '',
+              '认证类型': d.certType || '',
+              '是否在职': d.isActive === false ? '否' : '是'
+            };
+          });
+          
+          // 使用SheetJS生成Excel
+          var ws = XLSX.utils.json_to_sheet(excelData);
+          var wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, '认证进度数据');
+          
+          // 设置列宽
+          ws['!cols'] = [
+            { wch: 12 },  // 姓名
+            { wch: 12 },  // 工号
+            { wch: 15 },  // 二级部门
+            { wch: 15 },  // 三级部门
+            { wch: 15 },  // 四级部门
+            { wch: 12 },  // 认证状态
+            { wch: 15 },  // 学习进度
+            { wch: 15 },  // 认证类型
+            { wch: 10 }   // 是否在职
+          ];
+          
+          // 生成文件名
+          var now = new Date();
+          var fileName = '师兄认证进度数据_' + now.getFullYear() + 
+                         String(now.getMonth() + 1).padStart(2, '0') + 
+                         String(now.getDate()).padStart(2, '0') + '.xlsx';
+          
+          // 下载
+          XLSX.writeFile(wb, fileName);
+          showGlobalStatus('认证数据已下载', 'success');
         });
       }
 
