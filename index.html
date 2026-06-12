@@ -4322,6 +4322,28 @@
       // 页面加载时恢复缓存数据
       loadStoredData();
 
+      // 重新绑定数据导入面板事件（确保在loadStoredData之后）
+      var importDrawer2 = document.getElementById('import-drawer');
+      var importOverlay2 = document.getElementById('import-drawer-overlay');
+      var importClose2 = document.getElementById('import-drawer-close');
+      var navImport2 = document.getElementById('nav-import-data');
+
+      if (navImport2 && importDrawer2) {
+        navImport2.addEventListener('click', function() {
+          importDrawer2.classList.add('open');
+        });
+      }
+      if (importOverlay2 && importDrawer2) {
+        importOverlay2.addEventListener('click', function() {
+          importDrawer2.classList.remove('open');
+        });
+      }
+      if (importClose2 && importDrawer2) {
+        importClose2.addEventListener('click', function() {
+          importDrawer2.classList.remove('open');
+        });
+      }
+
       // 周报推送功能
       var weeklyReportModal = null;
 
