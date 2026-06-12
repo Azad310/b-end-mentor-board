@@ -2939,10 +2939,11 @@
       pendingList.slice(0, 20).forEach(function(d) {
         var statusClass = (d.certStatus === '未通过' || d.certStatus === '未合格') ? 'status-failed' : 'status-pending';
         var statusText = (d.certStatus === '未通过' || d.certStatus === '未合格') ? '未通过' : '未参与';
+        var isResigned = d.isActive === false;
         html += '<div class="reminder-item">';
         html += '<label class="reminder-checkbox-wrapper"><input type="checkbox" class="reminder-checkbox"><span class="checkmark"></span></label>';
         html += '<div class="reminder-info">';
-        html += '<div class="reminder-name">' + d.name + '</div>';
+        html += '<div class="reminder-name">' + d.name + (isResigned ? ' <span style="color: var(--danger); font-size: 11px; font-weight: 500;">【已离职】</span>' : '') + '</div>';
         html += '<div class="reminder-detail">' + d.empId + ' · ' + d.dept3 + '</div>';
         html += '</div>';
         html += '<span class="reminder-status ' + statusClass + '">' + statusText + '</span>';
@@ -3751,7 +3752,8 @@
         var html = '';
         var avatarGradients = ['var(--avatar-blue)', 'var(--avatar-green)', 'var(--avatar-orange)', 'var(--avatar-gray)'];
         
-        for (var i = 0; i < Math.min(mentors.length, 50); i++) {
+        // 显示全部记录
+        for (var i = 0; i < mentors.length; i++) {
           var m = mentors[i];
           var gradient = avatarGradients[i % avatarGradients.length];
           html += '<tr>';
@@ -3765,8 +3767,8 @@
           html += '</tr>';
         }
 
-        if (mentors.length > 50) {
-          html += '<tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 16px;">仅显示前50条，共 ' + mentors.length + ' 条记录</td></tr>';
+        if (mentors.length === 0) {
+          html += '<tr><td colspan="6" style="text-align: center; color: var(--text-tertiary); padding: 40px;">请导入师兄名单Excel文件</td></tr>';
         }
 
         tbody.innerHTML = html;
