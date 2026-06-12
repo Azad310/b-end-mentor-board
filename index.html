@@ -2693,6 +2693,8 @@
 
     // 从AI表格导出的JSON文件加载数据
     function loadAITableData() {
+      // 分享版本已有嵌入数据，跳过 AI 表格加载
+      if (typeof SHARED_DATA !== 'undefined') return;
       var statusEl = document.getElementById('global-status-text');
       if (statusEl) statusEl.textContent = '正在从AI表格加载数据...';
 
