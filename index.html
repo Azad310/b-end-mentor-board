@@ -4149,7 +4149,7 @@
             downloadPermissions: JSON.parse(localStorage.getItem('downloadPermissions') || '{"mentor":true,"cert":true,"submit":true}'),
             downloadUsers: JSON.parse(localStorage.getItem('downloadUsers') || '[]'),
             generatedAt: new Date().toISOString()
-          }) + ';</script>';
+          }) + '<\/script>';
           
           // 在</head>前插入数据脚本
           var sharedHtml = htmlContent.replace('</head>', dataScript + '</head>');
