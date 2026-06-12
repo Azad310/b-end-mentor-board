@@ -1681,6 +1681,14 @@
             </svg>
             <span>导出数据</span>
           </div>
+          <div class="nav-item" id="nav-generate-share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+            <span>生成分享版本</span>
+          </div>
         </div>
       </nav>
     </aside>
@@ -3057,7 +3065,76 @@
 
       // 页面加载时恢复数据
       async function loadStoredData() {
-        // 优先尝试从服务器加载完整数据（包含个人信息，但只有授权人员能导出）
+        // 检查是否是分享版本（数据已嵌入HTML）
+        if (typeof SHARED_DATA !== 'undefined') {
+          mentorData = SHARED_DATA.mentorData || [];
+          whiteCollarData = SHARED_DATA.whiteCollarData || [];
+          groupBuyData = SHARED_DATA.groupBuyData || [];
+          submitData = SHARED_DATA.submitData || [];
+          mergedCertData = SHARED_DATA.mergedCertData || [];
+          
+          // 恢复权限设置
+          if (SHARED_DATA.downloadPermissions) {
+            localStorage.setItem('downloadPermissions', JSON.stringify(SHARED_DATA.downloadPermissions));
+          }
+          if (SHARED_DATA.downloadUsers) {
+            localStorage.setItem('downloadUsers', JSON.stringify(SHARED_DATA.downloadUsers));
+          }
+          
+          // 更新UI
+          if (mentorData.length > 0) {
+            updateMentorTable(mentorData);
+            updateDeptAnalysis(mentorData);
+            updateDirectDeptAnalysis(mentorData);
+            updateFY27Stats(mentorData);
+            files.mentor.status.textContent = '分享版本数据: ' + mentorData.length + '条';
+            files.mentor.area.classList.add('uploaded');
+          }
+          if (whiteCollarData.length > 0) {
+            files['white-collar'].status.textContent = '分享版本数据: ' + whiteCollarData.length + '条';
+            files['white-collar'].area.classList.add('uploaded');
+          }
+          if (groupBuyData.length > 0) {
+            files['group-buy'].status.textContent = '分享版本数据: ' + groupBuyData.length + '条';
+            files['group-buy'].area.classList.add('uploaded');
+          }
+          if (submitData.length > 0) {
+            files.submit.status.textContent = '分享版本数据: ' + submitData.length + '条';
+            files.submit.area.classList.add('uploaded');
+          }
+          if (mergedCertData.length > 0) {
+            updateCertDashboard(mergedCertData);
+            updateDeptDistribution(mergedCertData);
+            updateReminderList(mergedCertData);
+          }
+          
+          // 分享版本隐藏导入按钮
+          var importBtn = document.getElementById('nav-import-data');
+          if (importBtn) importBtn.style.display = 'none';
+          var clearBtn = document.getElementById('nav-clear-data');
+          if (clearBtn) clearBtn.style.display = 'none';
+          var exportBtn = document.getElementById('nav-export-data');
+          if (exportBtn) exportBtn.style.display = 'none';
+          var generateShareBtn = document.getElementById('nav-generate-share');
+          if (generateShareBtn) generateShareBtn.style.display = 'none';
+          
+          console.log('已加载分享版本数据（生成时间: ' + SHARED_DATA.generatedAt + '）');
+          
+          // 提示用户输入姓名（用于权限验证）
+          setTimeout(function() {
+            var savedName = localStorage.getItem('currentUserName');
+            if (!savedName) {
+              var userName = prompt('欢迎使用师兄认证看板！\n请输入你的姓名（用于导出权限验证）：');
+              if (userName) {
+                localStorage.setItem('currentUserName', userName.trim());
+              }
+            }
+          }, 500);
+          
+          return;
+        }
+
+        // 优先尝试从服务器加载完整数据
         try {
           var response = await fetch('./data.json');
           if (response.ok) {
@@ -4002,22 +4079,27 @@
       var navExport = document.getElementById('nav-export-data');
       if (navExport) {
         navExport.addEventListener('click', function() {
-          // 检查是否有导出权限
-          var perms = JSON.parse(localStorage.getItem('downloadPermissions') || '{"mentor":true,"cert":true,"submit":true}');
-          var users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
-          var currentUser = localStorage.getItem('currentUserName') || '';
+          // 分享版本从嵌入数据读取权限
+          var users = [];
+          var isAdmin = false;
           
-          // 如果是管理员（第一个导入数据的人），直接允许
-          var isAdmin = users.length === 0 || currentUser === '';
+          if (typeof SHARED_DATA !== 'undefined') {
+            users = SHARED_DATA.downloadUsers || [];
+            // 分享版本没有管理员概念，只有在授权名单中的人才能导出
+          } else {
+            users = JSON.parse(localStorage.getItem('downloadUsers') || '[]');
+            var currentUser = localStorage.getItem('currentUserName') || '';
+            isAdmin = users.length === 0 || currentUser === '';
+          }
           
           if (!isAdmin) {
             // 检查是否在授权名单中
             var hasPermission = users.some(function(u) { 
-              return u.name === currentUser; 
+              return u.name === (localStorage.getItem('currentUserName') || ''); 
             });
             
             if (!hasPermission) {
-              alert('你没有导出权限，请联系管理员授权。');
+              alert('你没有导出权限，请联系管理员授权。\n\n管理员可以在"下载权限"中添加你的姓名。');
               return;
             }
           }
@@ -4041,7 +4123,52 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           
-          showGlobalStatus('数据已导出为data.json，请上传到GitHub仓库', 'success');
+          showGlobalStatus('数据已导出为data.json', 'success');
+        });
+      }
+
+      // 生成分享版本按钮
+      var navGenerateShare = document.getElementById('nav-generate-share');
+      if (navGenerateShare) {
+        navGenerateShare.addEventListener('click', function() {
+          if (mentorData.length === 0 && mergedCertData.length === 0) {
+            alert('请先导入数据再生成分享版本');
+            return;
+          }
+          
+          // 获取当前HTML文件的完整内容
+          var htmlContent = document.documentElement.outerHTML;
+          
+          // 将数据嵌入到HTML中（作为内联脚本变量）
+          var dataScript = '<script>var SHARED_DATA = ' + JSON.stringify({
+            mentorData: mentorData,
+            whiteCollarData: whiteCollarData,
+            groupBuyData: groupBuyData,
+            submitData: submitData,
+            mergedCertData: mergedCertData,
+            downloadPermissions: JSON.parse(localStorage.getItem('downloadPermissions') || '{"mentor":true,"cert":true,"submit":true}'),
+            downloadUsers: JSON.parse(localStorage.getItem('downloadUsers') || '[]'),
+            generatedAt: new Date().toISOString()
+          }) + ';</script>';
+          
+          // 在</head>前插入数据脚本
+          var sharedHtml = htmlContent.replace('</head>', dataScript + '</head>');
+          
+          // 添加标识，表示这是分享版本
+          sharedHtml = sharedHtml.replace('<html lang="zh-CN">', '<html lang="zh-CN" data-shared-version="true">');
+          
+          // 下载分享版本HTML文件
+          var blob = new Blob([sharedHtml], { type: 'text/html' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = '师兄认证看板-分享版.html';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          showGlobalStatus('分享版本已生成！将此文件发给同事即可查看。只有授权人员可导出数据。', 'success');
         });
       }
 
